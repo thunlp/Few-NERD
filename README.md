@@ -10,11 +10,15 @@ Check out the [website](https://ningding97.github.io/fewnerd/) of Few-NERD.
 
 Few-NERD is a large-scale, fine-grained manually annotated named entity recognition dataset, which contains *8 coarse-grained types, 66 fine-grained types, 188,200 sentences, 491,711 entities and 4,601,223 tokens*. Three benchmark tasks are built, one is supervised: Few-NERD (SUP) and the other two are few-shot: Few-NERD (INTRA) and Few-NERD (INTER).  
 
-The schema of Few-NERD is
+The schema of Few-NERD is:
 
-<img src="https://ftp.bmp.ovh/imgs/2021/05/30bd39a84c96e12a.png" width="60%" align="center"/>
+<img src="https://ftp.bmp.ovh/imgs/2021/05/30bd39a84c96e12a.png" width="50%" align="center"/>
 
 
+
+Few-NERD is manually annotated based on the context, here is an example:
+
+<img src="https://ftp.bmp.ovh/imgs/2021/05/e2fb9f9ee6b69ccd.png" width="40%" align="center"/>
 
 
 
@@ -23,6 +27,8 @@ The schema of Few-NERD is
  Run the following script to install the remaining dependencies,
 
 `pip install -r requirements.txt`
+
+
 
 ## Data 
 
@@ -44,15 +50,17 @@ a	O
 committee	O
 reviewing	O
 the	O
-administrative	other-law
-constitution	other-law
-of	other-law
-Galicia	other-law
+administrative	MISC-law
+constitution	MISC-law
+of	MISC-law
+Galicia	MISC-law
 to	O
 little	O
 effect	O
 .	O
 ```
+
+
 
 ## Structure
 
@@ -82,9 +90,7 @@ As established in our paper, we design an *N way K~2K shot* sampling strategy in
 
 #### ProtoBERT
 
- Prototypical nets with BERT is implemented in `model/proto.py`
-
- 
+ Prototypical nets with BERT is implemented in `model/proto.py`.
 
 
 
