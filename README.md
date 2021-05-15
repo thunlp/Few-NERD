@@ -12,7 +12,7 @@ Few-NERD is a large-scale, fine-grained manually annotated named entity recognit
 
 The schema of Few-NERD is
 
-<img src="https://ftp.bmp.ovh/imgs/2021/05/30bd39a84c96e12a.png" width="800" />
+<img src="https://ftp.bmp.ovh/imgs/2021/05/30bd39a84c96e12a.png" width="60%" />
 
 
 
