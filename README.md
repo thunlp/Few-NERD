@@ -4,6 +4,19 @@
 
 This is the source code of the ACL-IJCNLP 2021 paper:  [**Few-NERD: A Few-shot Named Entity Recognition Dataset**](https://ningding97.github.io/fewnerd/). Check out the [website](https://ningding97.github.io/fewnerd/) of Few-NERD. 
 
+## QuickLinks
+
+- [Website](https://ningding97.github.io/fewnerd/)
+- [Overview](#overview)
+- [Getting Started](#requirements)
+  - [Requirements](#requirements)
+  - [Data](#data)
+  - [Structure](#structure)
+  - [Key Implementations](#Key Implementations)
+    - [N way K~2K shot Sampler](#Sampler)
+  - [How to Run](#How to Run)
+- [Citation](#Citation)
+
 ## Overview
 
 Few-NERD is a large-scale, fine-grained manually annotated named entity recognition dataset, which contains *8 coarse-grained types, 66 fine-grained types, 188,200 sentences, 491,711 entities and 4,601,223 tokens*. Three benchmark tasks are built, one is supervised: Few-NERD (SUP) and the other two are few-shot: Few-NERD (INTRA) and Few-NERD (INTER).  
