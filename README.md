@@ -2,9 +2,7 @@
 
 # Few-NERD: Now Only a Few-shot NER Dataset
 
-This is the source code of the ACL-IJCNLP 2021 paper:  **Few-NERD: A Few-shot Named Entity Recognition Dataset**.  
-
-Check out the [website](https://ningding97.github.io/fewnerd/) of Few-NERD. 
+This is the source code of the ACL-IJCNLP 2021 paper:  [**Few-NERD: A Few-shot Named Entity Recognition Dataset**](https://ningding97.github.io/fewnerd/). Check out the [website](https://ningding97.github.io/fewnerd/) of Few-NERD. 
 
 ## Overview
 
@@ -12,13 +10,11 @@ Few-NERD is a large-scale, fine-grained manually annotated named entity recognit
 
 The schema of Few-NERD is:
 
-<img src="https://ftp.bmp.ovh/imgs/2021/05/30bd39a84c96e12a.png" width="50%" align="center"/>
+<img src="https://ftp.bmp.ovh/imgs/2021/05/30bd39a84c96e12a.png" width="40%" align="center"/>
 
 
 
-Few-NERD is manually annotated based on the context, here is an example:
-
-<img src="https://ftp.bmp.ovh/imgs/2021/05/e2fb9f9ee6b69ccd.png" width="40%" align="center"/>
+Few-NERD is manually annotated based on the context, for example, in the sentence "*London is the fifth album by the British rock band…*", the named entity `London` is labeled as `Art-Music`.
 
 
 
