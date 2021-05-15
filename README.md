@@ -113,7 +113,7 @@ As established in our paper, we design an *N way K~2K shot* sampling strategy in
 
 **5-way-1~5-shot**
 
-```shell
+```bash
 python3 train_demo.py  --train data/mydata/train-inter.txt \
 --val data/mydata/val-inter.txt --test data/mydata/test-inter.txt \
 --lr 1e-3 --batch_size 2 --trainN 5 --N 5 --K 1 --Q 1 \
@@ -123,7 +123,7 @@ python3 train_demo.py  --train data/mydata/train-inter.txt \
 
 **5-way-5~10-shot**
 
-```shell
+```bash
 python3 train_demo.py  --train data/mydata/train-inter.txt \
 --val data/mydata/val-inter.txt --test data/mydata/test-inter.txt \
 --lr 1e-3 --batch_size 2 --trainN 5 --N 5 --K 5 --Q 5 \
@@ -133,7 +133,7 @@ python3 train_demo.py  --train data/mydata/train-inter.txt \
 
 **10-way-1~5-shot**
 
-```shell
+```bash
 python3 train_demo.py  --train data/mydata/train-inter.txt \
 --val data/mydata/val-inter.txt --test data/mydata/test-inter.txt \
 --lr 1e-3 --batch_size 2 --trainN 10 --N 10 --K 1 --Q 1 \
@@ -143,7 +143,7 @@ python3 train_demo.py  --train data/mydata/train-inter.txt \
 
 **10-way-5~10-shot**
 
-```shell
+```bash
 python3 train_demo.py  --train data/mydata/train-inter.txt \
 --val data/mydata/val-inter.txt --test data/mydata/test-inter.txt \
 --lr 1e-3 --batch_size 2 --trainN 5 --N 5 --K 5 --Q 1 \
@@ -157,7 +157,7 @@ python3 train_demo.py  --train data/mydata/train-inter.txt \
 
 If you use Few-NERD in your work, please cite our paper:
 
-```latex
+```bibtex
 @inproceedings{ding2021few,
   title={Few-NERD:A Few-shot Named Entity Recognition Dataset},
   author={Ding, Ning and Xu, Guangwei and Chen, Yulin, and Wang, Xiaobin and Han, Xu and Xie, Pengjun and Zheng, Hai-Tao and Liu, Zhiyuan},
