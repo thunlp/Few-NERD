@@ -4,15 +4,15 @@
 
 This is the source code of the ACL-IJCNLP 2021 paper:  **Few-NERD: A Few-shot Named Entity Recognition Dataset**.  
 
-Check out the [website](https://ningding97.github.io/fewnerd/) of Few-NERD. The code implements 3 models (ProtoBERT, NNShot, StructShot).
+Check out the [website](https://ningding97.github.io/fewnerd/) of Few-NERD. 
 
 ## Overview
 
-Few-NERD is a large-scale, fine-grained manually annotated named entity recognition dataset, which contains 8 coarse-grained types, 66 fine-grained types, 188,200 sentences, 491,711 entities and 4,601,223 tokens. Three benchmark tasks are built, one is supervised (Few-NERD (SUP)) and the other two are few-shot (Few-NERD (INTRA) and Few-NERD (INTER)). 
+Few-NERD is a large-scale, fine-grained manually annotated named entity recognition dataset, which contains *8 coarse-grained types, 66 fine-grained types, 188,200 sentences, 491,711 entities and 4,601,223 tokens*. Three benchmark tasks are built, one is supervised: Few-NERD (SUP) and the other two are few-shot: Few-NERD (INTRA) and Few-NERD (INTER).  
 
 The schema of Few-NERD is
 
- ![few-nerd](/Users/dingning/Desktop/few-nerd.png)
+ ![few-nerd](https://ftp.bmp.ovh/imgs/2021/05/30bd39a84c96e12a.png)
 
 ## Requirements
 
