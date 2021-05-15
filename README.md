@@ -12,9 +12,9 @@ This is the source code of the ACL-IJCNLP 2021 paper:  [**Few-NERD: A Few-shot N
   - [Requirements](#requirements)
   - [Data](#data)
   - [Structure](#structure)
-  - [Key Implementations](#Key Implementations)
+  - [Key Implementations](#Key-Implementations)
     - [N way K~2K shot Sampler](#Sampler)
-  - [How to Run](#How to Run)
+  - [How to Run](#How-to-Run)
 - [Citation](#Citation)
 
 ## Overview
