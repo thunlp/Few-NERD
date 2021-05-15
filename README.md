@@ -4,7 +4,7 @@
 
 This is the source code of the ACL-IJCNLP 2021 paper:  [**Few-NERD: A Few-shot Named Entity Recognition Dataset**](https://ningding97.github.io/fewnerd/). Check out the [website](https://ningding97.github.io/fewnerd/) of Few-NERD. 
 
-## QuickLinks
+## Contents
 
 - [Website](https://ningding97.github.io/fewnerd/)
 - [Overview](#overview)
@@ -35,9 +35,9 @@ Few-NERD is manually annotated based on the context, for example, in the sentenc
 
  Run the following script to install the remaining dependencies,
 
-`pip install -r requirements.txt`
-
-
+```shell
+pip install -r requirements.txt
+```
 
 ## Data 
 
@@ -47,7 +47,7 @@ To obtain the three benchmarks datasets of Few-NERD, simply run the bash file `d
 
 The data are pre-processed into the typical NER data forms as below (`token\tlabel`). Each dataset should contain train.txt, val.txt, test.txt 3 separate files.
 
-```tex
+```latex
 Between	O
 1789	O
 and	O
@@ -75,7 +75,7 @@ effect	O
 
 The structure of our project is:
 
-```
+```shell
 --util
 | -- framework.py
 | -- data_loader.py
@@ -113,7 +113,7 @@ As established in our paper, we design an *N way K~2K shot* sampling strategy in
 
 **5-way-1~5-shot**
 
-```
+```shell
 python3 train_demo.py  --train data/mydata/train-inter.txt \
 --val data/mydata/val-inter.txt --test data/mydata/test-inter.txt \
 --lr 1e-3 --batch_size 2 --trainN 5 --N 5 --K 1 --Q 1 \
@@ -123,7 +123,7 @@ python3 train_demo.py  --train data/mydata/train-inter.txt \
 
 **5-way-5~10-shot**
 
-```
+```shell
 python3 train_demo.py  --train data/mydata/train-inter.txt \
 --val data/mydata/val-inter.txt --test data/mydata/test-inter.txt \
 --lr 1e-3 --batch_size 2 --trainN 5 --N 5 --K 5 --Q 5 \
@@ -133,7 +133,7 @@ python3 train_demo.py  --train data/mydata/train-inter.txt \
 
 **10-way-1~5-shot**
 
-```
+```shell
 python3 train_demo.py  --train data/mydata/train-inter.txt \
 --val data/mydata/val-inter.txt --test data/mydata/test-inter.txt \
 --lr 1e-3 --batch_size 2 --trainN 10 --N 10 --K 1 --Q 1 \
@@ -143,7 +143,7 @@ python3 train_demo.py  --train data/mydata/train-inter.txt \
 
 **10-way-5~10-shot**
 
-```
+```shell
 python3 train_demo.py  --train data/mydata/train-inter.txt \
 --val data/mydata/val-inter.txt --test data/mydata/test-inter.txt \
 --lr 1e-3 --batch_size 2 --trainN 5 --N 5 --K 5 --Q 1 \
@@ -157,7 +157,7 @@ python3 train_demo.py  --train data/mydata/train-inter.txt \
 
 If you use Few-NERD in your work, please cite our paper:
 
-```
+```latex
 @inproceedings{ding2021few,
   title={Few-NERD:A Few-shot Named Entity Recognition Dataset},
   author={Ding, Ning and Xu, Guangwei and Chen, Yulin, and Wang, Xiaobin and Han, Xu and Xie, Pengjun and Zheng, Hai-Tao and Liu, Zhiyuan},
