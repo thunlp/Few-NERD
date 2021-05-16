@@ -10,12 +10,15 @@ This is the source code of the ACL-IJCNLP 2021 paper:  [**Few-NERD: A Few-shot N
 - [Overview](#overview)
 - [Getting Started](#requirements)
   - [Requirements](#requirements)
-  - [Data](#data)
+  - [Few-NERD Dataset](#few-nerd-dataset)
+    - [Get the Data](#get-the-data)
+    - [Data Format](Data-format)
   - [Structure](#structure)
   - [Key Implementations](#Key-Implementations)
     - [N way K~2K shot Sampler](#Sampler)
   - [How to Run](#How-to-Run)
 - [Citation](#Citation)
+- [Connection](Connection)
 
 ## Overview
 
@@ -39,13 +42,23 @@ Few-NERD is manually annotated based on the context, for example, in the sentenc
 pip install -r requirements.txt
 ```
 
-## Data 
+## Few-NERD Dataset 
+
+### Get the Data
+
+- Few-NERD contains 8 coarse-grained types, 66 fine-grained types, 188,200 sentences, 491,711 entities and 4,601,223 tokens.
+- We have splitted the data into 3 training mode. One for supervised setting-`supervised`, theo ther two for few-shot setting `inter` and `intra`. Each contains three files `train.txt`, `dev.txt`, `test.txt`. `supervised`datasets are randomly split. `inter` datasets are randomly split within coarse type, i.e. each file contains all 8 coarse types but different fine-grained types. `intra` datasets are randomly split by coarse type.
+- The splitted dataset can be downloaded automatically once you run the model. **If you want to download the data manually, run data/download.sh, remember to add parameter supervised/inter/intra to indicte the type of the dataset**
 
 To obtain the three benchmarks datasets of Few-NERD, simply run the bash file `data/download.sh`
 
-`		bash download.sh`
+```shell
+bash data/download.sh supervised
+```
 
-The data are pre-processed into the typical NER data forms as below (`token\tlabel`). Each dataset should contain train.txt, val.txt, test.txt 3 separate files.
+### Data Format
+
+The data are pre-processed into the typical NER data forms as below (`token\tlabel`). 
 
 ```latex
 Between	O
@@ -68,8 +81,6 @@ little	O
 effect	O
 .	O
 ```
-
-
 
 ## Structure
 
@@ -105,11 +116,42 @@ As established in our paper, we design an *N way K~2K shot* sampling strategy in
 
 ## How to Run
 
-- The conducted experiments cover 3 models across 4 different few-shot settings. 
-- The parameter `--model` is used to specify which model to run. The 3 options are `proto`, `nnshot` and `structshot`.
-- The parameters `--trainN` and `--N` are used to specify the num of ways in few-shot, in support and query set respectively. `--K` and `--Q` are for num of shots in support and query set, respectively.
-- For hyperparameter `--tau` in structshot, we use `0.32` in 1-shot setting, `0.318` for 5-way-5-shot setting, and `0.434` for 10-way-5-shot setting.
-- Take structshot for example, the expriments can be run as follows.
+Run `train_demo.py`. The arguments are presented below. The default parameters are for `proto` model on `inter`mode dataset.
+
+```shell
+-- mode                 training mode, must be inter, intra, or supervised
+-- trainN               N in train
+-- N                    N in val and test
+-- K                    K shot
+-- Q                    Num of query per class
+-- batch_size           batch size
+-- train_iter           num of iters in training
+-- val_iter             num of iters in validation
+-- test_iter            num of iters in testing
+-- val_step             val after training how many iters
+-- model                model name, must be proto, nnshot or structshot
+-- max_length           max length of tokenized sentence
+-- lr                   learning rate
+-- weight_decay         weight decay
+-- grad_iter            accumulate gradient every x iterations
+-- load_ckpt            path to load model
+-- save_ckpt            path to save model
+-- fp16                 use nvidia apex fp16
+-- only_test            no training process, only test
+-- ckpt_name            checkpoint name
+-- seed                 random seed
+-- pretrain_ckpt        bert pre-trained checkpoint
+-- dot                  use dot instead of L2 distance in distance calculation
+-- use_sgd_for_bert     use SGD instead of AdamW for BERT.
+# only for structshot
+-- tau                  StructShot parameter to re-normalizes the transition probabilities
+```
+
+- For hyperparameter `--tau` in structshot, we use `0.32` in 1-shot setting, `0.318` for 5-way-5-shot setting, and `0.434` for 10-way-5-shot setting.
+
+- Take `structshot` model on `inter` dataset for example, the expriments can be run as follows.
+
+  ​
 
 **5-way-1~5-shot**
 
@@ -159,12 +201,19 @@ If you use Few-NERD in your work, please cite our paper:
 
 ```bibtex
 @inproceedings{ding2021few,
-  title={Few-NERD:A Few-shot Named Entity Recognition Dataset},
-  author={Ding, Ning and Xu, Guangwei and Chen, Yulin, and Wang, Xiaobin and Han, Xu and Xie, Pengjun and Zheng, Hai-Tao and Liu, Zhiyuan},
-  booktitle={ACL-IJCNLP},
-  year={2021}
+title={Few-NERD:A Few-shot Named Entity Recognition Dataset},
+author={Ding, Ning and Xu, Guangwei and Chen, Yulin, and Wang, Xiaobin and Han, Xu and Xie, Pengjun and Zheng, Hai-Tao and Liu, Zhiyuan},
+booktitle={ACL-IJCNLP},
+year={2021}
 }
 ```
 
 
+
+## Connection
+
+If you have any questions, feel free to contact
+
+- [dingn18@mails.tsinghua.edu.cn;](mailto:dingn18@mails.tsinghua.edu.cn)
+- [yl-chen17@mails.tsinghua.edu.cn;](mailto:yl-chen17@mails.tsinghua.edu.cn)
 
