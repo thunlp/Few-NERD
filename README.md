@@ -2,7 +2,7 @@
 
 # Few-NERD: Now Only a Few-shot NER Dataset
 
-This is the source code of the ACL-IJCNLP 2021 paper:  [**Few-NERD: A Few-shot Named Entity Recognition Dataset**](https://ningding97.github.io/fewnerd/). Check out the [website](https://ningding97.github.io/fewnerd/) of Few-NERD. 
+This is the source code of the ACL-IJCNLP 2021 paper:  [**Few-NERD: A Few-shot Named Entity Recognition Dataset**](https://www.stingning.cn/assets/pdf/ACL2021-fewnerd.pdf). Check out the [website](https://ningding97.github.io/fewnerd/) of Few-NERD. 
 
 ## Contents
 
