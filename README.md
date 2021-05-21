@@ -47,7 +47,7 @@ pip install -r requirements.txt
 ### Get the Data
 
 - Few-NERD contains 8 coarse-grained types, 66 fine-grained types, 188,200 sentences, 491,711 entities and 4,601,223 tokens.
-- We have splitted the data into 3 training mode. One for supervised setting-`supervised`, theo ther two for few-shot setting `inter` and `intra`. Each contains three files `train.txt`, `dev.txt`, `test.txt`. `supervised`datasets are randomly split. `inter` datasets are randomly split within coarse type, i.e. each file contains all 8 coarse types but different fine-grained types. `intra` datasets are randomly split by coarse type.
+- We have splitted the data into 3 training mode. One for supervised setting-`supervised`, the other two for few-shot setting `inter` and `intra`. Each contains three files `train.txt`, `dev.txt`, `test.txt`. `supervised`datasets are randomly split. `inter` datasets are randomly split within coarse type, i.e. each file contains all 8 coarse types but different fine-grained types. `intra` datasets are randomly split by coarse type.
 - The splitted dataset can be downloaded automatically once you run the model. **If you want to download the data manually, run data/download.sh, remember to add parameter supervised/inter/intra to indicte the type of the dataset**
 
 To obtain the three benchmarks datasets of Few-NERD, simply run the bash file `data/download.sh`
@@ -156,8 +156,7 @@ Run `train_demo.py`. The arguments are presented below. The default parameters 
 **5-way-1~5-shot**
 
 ```bash
-python3 train_demo.py  --train data/mydata/train-inter.txt \
---val data/mydata/val-inter.txt --test data/mydata/test-inter.txt \
+python3 train_demo.py  --mode inter \
 --lr 1e-3 --batch_size 2 --trainN 5 --N 5 --K 1 --Q 1 \
 --train_iter 10000 --val_iter 500 --test_iter 5000 --val_step 1000 \
 --max_length 60 --model structshot --tau 0.32
@@ -166,8 +165,7 @@ python3 train_demo.py  --train data/mydata/train-inter.txt \
 **5-way-5~10-shot**
 
 ```bash
-python3 train_demo.py  --train data/mydata/train-inter.txt \
---val data/mydata/val-inter.txt --test data/mydata/test-inter.txt \
+python3 train_demo.py  --mode inter \
 --lr 1e-3 --batch_size 2 --trainN 5 --N 5 --K 5 --Q 5 \
 --train_iter 10000 --val_iter 500 --test_iter 5000 --val_step 1000 \
 --max_length 60 --model structshot --tau 0.318
@@ -176,8 +174,7 @@ python3 train_demo.py  --train data/mydata/train-inter.txt \
 **10-way-1~5-shot**
 
 ```bash
-python3 train_demo.py  --train data/mydata/train-inter.txt \
---val data/mydata/val-inter.txt --test data/mydata/test-inter.txt \
+python3 train_demo.py  --mode inter \
 --lr 1e-3 --batch_size 2 --trainN 10 --N 10 --K 1 --Q 1 \
 --train_iter 10000 --val_iter 500 --test_iter 5000 --val_step 1000 \
 --max_length 60 --model structshot --tau 0.32
@@ -186,8 +183,7 @@ python3 train_demo.py  --train data/mydata/train-inter.txt \
 **10-way-5~10-shot**
 
 ```bash
-python3 train_demo.py  --train data/mydata/train-inter.txt \
---val data/mydata/val-inter.txt --test data/mydata/test-inter.txt \
+python3 train_demo.py  --mode inter \
 --lr 1e-3 --batch_size 2 --trainN 5 --N 5 --K 5 --Q 1 \
 --train_iter 10000 --val_iter 500 --test_iter 5000 --val_step 1000 \
 --max_length 60 --model structshot --tau 0.434
