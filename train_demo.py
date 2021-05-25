@@ -24,14 +24,6 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', default='inter',
             help='training mode, must be in [inter, intra, supervised]')
-    '''
-    parser.add_argument('--train', default='data/mydata/train-inter.txt',
-            help='train file')
-    parser.add_argument('--val', default='data/mydata/val-inter.txt',
-            help='val file')
-    parser.add_argument('--test', default='data/mydata/test-inter.txt',
-            help='test file')
-    '''
     parser.add_argument('--trainN', default=2, type=int,
             help='N in train')
     parser.add_argument('--N', default=2, type=int,
@@ -56,10 +48,6 @@ def main():
            help='max length')
     parser.add_argument('--lr', default=1e-4, type=float,
            help='learning rate')
-    parser.add_argument('--weight_decay', default=1e-5, type=float,
-           help='weight decay')
-    parser.add_argument('--dropout', default=0.0, type=float,
-           help='dropout rate')
     parser.add_argument('--grad_iter', default=1, type=int,
            help='accumulate gradient every x iterations')
     parser.add_argument('--load_ckpt', default=None,
@@ -123,13 +111,13 @@ def main():
     print('loading data...')
     opt.train = f'data/{opt.mode}/train.txt'
     opt.test = f'data/{opt.mode}/test.txt'
-    opt.val = f'data/{opt.mode}/dev.txt'
-    if not os.path.exists(opt.train) and os.path.exists(opt.dev) and os.path.exists(opt.test):
+    opt.dev = f'data/{opt.mode}/dev.txt'
+    if not (os.path.exists(opt.train) and os.path.exists(opt.dev) and os.path.exists(opt.test)):
         os.system(f'bash data/download.sh {opt.mode}')
 
     train_data_loader = get_loader(opt.train, word_encoder,
             N=trainN, K=K, Q=Q, batch_size=batch_size, max_length=max_length)
-    val_data_loader = get_loader(opt.val, word_encoder,
+    val_data_loader = get_loader(opt.dev, word_encoder,
             N=N, K=K, Q=Q, batch_size=batch_size, max_length=max_length)
     test_data_loader = get_loader(opt.test, word_encoder,
             N=N, K=K, Q=Q, batch_size=batch_size, max_length=max_length)

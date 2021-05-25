@@ -312,22 +312,14 @@ class FewShotNERFramework:
               model_name,
               B, N_for_train, N_for_eval, K, Q,
               learning_rate=1e-1,
-              lr_step_size=20000,
-              weight_decay=1e-5,
               train_iter=30000,
               val_iter=1000,
               val_step=2000,
-              test_iter=3000,
               load_ckpt=None,
               save_ckpt=None,
-              pytorch_optim=optim.SGD,
-              bert_optim=False,
-              warmup=True,
               warmup_step=300,
               grad_iter=1,
               fp16=False,
-              adv_dis_lr=1e-1,
-              adv_enc_lr=1e-1,
               use_sgd_for_bert=False):
         '''
         model: a FewShotREModel instance
@@ -338,12 +330,9 @@ class FewShotNERFramework:
         Q: Num of instances for each class in the query set
         ckpt_dir: Directory of checkpoints
         learning_rate: Initial learning rate
-        lr_step_size: Decay learning rate every lr_step_size steps
-        weight_decay: Rate of decaying weight
         train_iter: Num of iterations of training
         val_iter: Num of iterations of validating
         val_step: Validate every val_step steps
-        test_iter: Num of iterations of testing
         '''
         print("Start training...")
     
@@ -386,7 +375,6 @@ class FewShotNERFramework:
         # Training
         best_f1 = 0.0
         iter_loss = 0.0
-        #iter_right = 0
         iter_sample = 0
         pred_cnt = 0
         label_cnt = 0
@@ -404,7 +392,6 @@ class FewShotNERFramework:
             logits, pred = model(support, query, 
                     N_for_train, K, Q * N_for_train)
             loss = model.loss(logits, label) / float(grad_iter)
-            #right = model.accuracy(pred, label)
             tmp_pred_cnt, tmp_label_cnt, correct = model.metrics_by_entity(pred, label)
                 
             if fp16:
@@ -466,7 +453,6 @@ class FewShotNERFramework:
             sent_len, n_label = sent_scores.shape
             sent_probs = F.softmax(sent_scores, dim=1)
             start_probs = torch.zeros(sent_len) + 1e-6
-            # start_probs = start_probs.cuda()
             sent_probs = torch.cat((start_probs.view(sent_len, 1), sent_probs), 1)
             feats = self.viterbi_decoder.forward(torch.log(sent_probs).view(1, sent_len, n_label+1))
             vit_labels = self.viterbi_decoder.viterbi(feats)
@@ -508,8 +494,6 @@ class FewShotNERFramework:
                     own_state[name].copy_(param)
             eval_dataset = self.test_data_loader
 
-        iter_right = 0.0
-        iter_sample = 0.0
         pred_cnt = 0 # pred entity cnt
         label_cnt = 0 # true label entity cnt
         correct_cnt = 0 # correct predicted entity cnt
