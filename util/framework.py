@@ -223,7 +223,7 @@ class FewShotNERModel(nn.Module):
 
     def __get_type_error__(self, pred, label, query):
         '''
-        return finegrained type error and coarse type error
+        return finegrained type error cnt, coarse type error cnt and total correct span count
         '''
         pred_tag, label_tag = self.__transform_label_to_tag__(pred, query)
         pred_span = self.__get_class_span_dict__(pred_tag, is_string=True)
@@ -231,11 +231,11 @@ class FewShotNERModel(nn.Module):
         total_correct_span = self.__get_correct_span__(pred_span, label_span) + 1e-6
         wrong_within_span = self.__get_wrong_within_span__(pred_span, label_span)
         wrong_outer_span = self.__get_wrong_outer_span__(pred_span, label_span)
-        return wrong_within_span / total_correct_span, wrong_outer_span / total_correct_span
+        return wrong_within_span, wrong_outer_span, total_correct_span
                 
     def metrics_by_entity(self, pred, label):
         '''
-        return entity level precision, recall, f1 score
+        return entity level count of total prediction, true labels, and correct prediction
         '''
         pred = pred.view(-1).cpu().numpy().tolist()
         label = label.view(-1).cpu().numpy().tolist()
@@ -244,10 +244,11 @@ class FewShotNERModel(nn.Module):
         pred_cnt = self.__get_cnt__(pred_class_span)
         label_cnt = self.__get_cnt__(label_class_span)
         correct_cnt = self.__get_intersect_by_entity__(pred_class_span, label_class_span)
-        precision = correct_cnt / (pred_cnt + 1e-6)
-        recall = correct_cnt / label_cnt
-        f1 = 2*precision*recall / (precision + recall + 1e-6)
-        return precision, recall, f1
+        #precision = correct_cnt / (pred_cnt + 1e-6)
+        #recall = correct_cnt / label_cnt
+        #f1 = 2*precision*recall / (precision + recall + 1e-6)
+        #return precision, recall, f1
+        return pred_cnt, label_cnt, correct_cnt
 
     def error_analysis(self, pred, label, query):
         '''
@@ -255,12 +256,16 @@ class FewShotNERModel(nn.Module):
         token level false positive rate and false negative rate
         entity level within error and outer error 
         '''
-        fp = torch.mean(((pred.view(-1) != 0) & (label.view(-1) == 0)).type(torch.FloatTensor))
-        fn = torch.mean(((pred.view(-1) == 0) & (label.view(-1) != 0)).type(torch.FloatTensor))
-        pred = pred.view(-1).cpu().numpy().tolist()
-        label = label.view(-1).cpu().numpy().tolist()
-        within, outer = self.__get_type_error__(pred, label, query)
-        return fp, fn, within, outer
+        pred = pred.view(-1)
+        label = label.view(-1)
+        fp = torch.sum(((pred != 0) & (label == 0)).type(torch.FloatTensor))
+        true_o = torch.sum(((label == 0)).type(torch.FloatTensor))
+        fn = torch.sum(((pred == 0) & (label != 0)).type(torch.FloatTensor))
+        true_i = torch.sum(((label != 0)).type(torch.FloatTensor))
+        pred = pred.cpu().numpy().tolist()
+        label = label.cpu().numpy().tolist()
+        within, outer, total_span = self.__get_type_error__(pred, label, query)
+        return fp, fn, true_o, true_i, within, outer, total_span
 
 
 class FewShotNERFramework:
@@ -379,13 +384,13 @@ class FewShotNERFramework:
         model.train()
 
         # Training
-        best_f1 = 0
+        best_f1 = 0.0
         iter_loss = 0.0
-        iter_right = 0.0
-        iter_sample = 0.0
-        iter_precision = 0.0
-        iter_recall = 0.0
-        iter_f1 = 0.0
+        #iter_right = 0
+        iter_sample = 0
+        pred_cnt = 0
+        label_cnt = 0
+        correct_cnt = 0
         for it in range(start_iter, start_iter + train_iter):
             support, query = next(self.train_data_loader)
             if torch.cuda.is_available():
@@ -399,8 +404,8 @@ class FewShotNERFramework:
             logits, pred = model(support, query, 
                     N_for_train, K, Q * N_for_train)
             loss = model.loss(logits, label) / float(grad_iter)
-            right = model.accuracy(pred, label)
-            precision, recall, f1 = model.metrics_by_entity(pred, label)
+            #right = model.accuracy(pred, label)
+            tmp_pred_cnt, tmp_label_cnt, correct = model.metrics_by_entity(pred, label)
                 
             if fp16:
                 with amp.scale_loss(loss, optimizer) as scaled_loss:
@@ -414,15 +419,17 @@ class FewShotNERFramework:
                 optimizer.zero_grad()
 
             iter_loss += self.item(loss.data)
-            iter_right += self.item(right.data)
-            iter_precision += precision
-            iter_recall += recall
-            iter_f1 += f1
+            #iter_right += self.item(right.data)
+            pred_cnt += tmp_pred_cnt
+            label_cnt += tmp_label_cnt
+            correct_cnt += correct
             iter_sample += 1
             if (it + 1) % 100 == 0 or (it + 1) % val_step == 0:
-                sys.stdout.write('step: {0:4} | loss: {1:2.6f}, token-level accuracy: {2:3.2f}% | [ENTITY] precision: {3:3.4f}, recall: {4:3.4f}, f1: {5:3.4f}'\
-                    .format(it + 1, iter_loss / iter_sample, 100 * iter_right / iter_sample, \
-                                        iter_precision / iter_sample, iter_recall / iter_sample, iter_f1 / iter_sample) + '\r')
+                precision = correct_cnt / pred_cnt
+                recall = correct_cnt / label_cnt
+                f1 = 2 * precision * recall / (precision + recall)
+                sys.stdout.write('step: {0:4} | loss: {1:2.6f} | [ENTITY] precision: {2:3.4f}, recall: {3:3.4f}, f1: {4:3.4f}'\
+                    .format(it + 1, iter_loss/ iter_sample, precision, recall, f1) + '\r')
             sys.stdout.flush()
 
             if (it + 1) % val_step == 0:
@@ -433,13 +440,10 @@ class FewShotNERFramework:
                     torch.save({'state_dict': model.state_dict()}, save_ckpt)
                     best_f1 = f1
                 iter_loss = 0.
-                iter_loss_dis = 0.
-                iter_right = 0.
-                iter_right_dis = 0.
                 iter_sample = 0.
-                iter_precision = 0.0
-                iter_recall = 0.0
-                iter_f1 = 0.0
+                pred_cnt = 0
+                label_cnt = 0
+                correct_cnt = 0
                 
         print("\n####################\n")
         print("Finish training " + model_name)
@@ -506,14 +510,17 @@ class FewShotNERFramework:
 
         iter_right = 0.0
         iter_sample = 0.0
-        iter_precision = 0.0
-        iter_recall = 0.0
-        iter_f1 = 0.0
+        pred_cnt = 0 # pred entity cnt
+        label_cnt = 0 # true label entity cnt
+        correct_cnt = 0 # correct predicted entity cnt
 
-        iter_fp = 0.0 # misclassify O as I-
-        iter_fn = 0.0 # misclassify I- as O
-        iter_within = 0.0 # span correct but of wrong fine-grained type 
-        iter_outer = 0.0 # span correct but of wrong coarse-grained type
+        fp_cnt = 0 # misclassify O as I-
+        fn_cnt = 0 # misclassify I- as O
+        true_o_cnt = 0 # total O token cnt
+        true_i_cnt = 0 # total "type" token cnt
+        within_cnt = 0 # span correct but of wrong fine-grained type 
+        outer_cnt = 0 # span correct but of wrong coarse-grained type
+        total_span_cnt = 0 # span correct
         with torch.no_grad():
             for it in range(eval_iter):
                 support, query = next(eval_dataset)
@@ -528,23 +535,28 @@ class FewShotNERFramework:
                 if self.viterbi:
                     pred = self.viterbi_decode(logits, query['label'])
 
-                right = model.accuracy(pred, label)
-                precision, recall, f1 = model.metrics_by_entity(pred, label)
-                fp, fn, within, outer = model.error_analysis(pred, label, query)
-                iter_right += self.item(right.data)
-                iter_precision += precision
-                iter_recall += recall
-                iter_f1 += f1
+                tmp_pred_cnt, tmp_label_cnt, correct = model.metrics_by_entity(pred, label)
+                fp, fn, true_o, true_i, within, outer, total_span = model.error_analysis(pred, label, query)
+                pred_cnt += tmp_pred_cnt
+                label_cnt += tmp_label_cnt
+                correct_cnt += correct
 
-                iter_fn += self.item(fn.data)
-                iter_fp += self.item(fp.data)
-                iter_outer += outer
-                iter_within += within
-                iter_sample += 1
+                fn_cnt += self.item(fn.data)
+                fp_cnt += self.item(fp.data)
+                true_o_cnt += true_o
+                true_i_cnt += true_i
+                outer_cnt += outer
+                within_cnt += within
+                total_span_cnt += total_span
 
-            sys.stdout.write('[EVAL] step: {0:4} | token-level accuracy: {1:3.2f}% | [ENTITY] precision: {2:3.4f}, recall: {3:3.4f}, f1: {4:3.4f}'\
-                .format(it + 1, 100 * iter_right / iter_sample, iter_precision / iter_sample, \
-                                    iter_recall / iter_sample, iter_f1 / iter_sample) + '\r')
+            precision = correct_cnt / pred_cnt
+            recall = correct_cnt /label_cnt
+            f1 = 2 * precision * recall / (precision + recall)
+            fp_error = fp_cnt / true_o_cnt
+            fn_error = fn_cnt / true_i_cnt
+            within_error = within_cnt / total_span_cnt
+            outer_error = outer_cnt / total_span_cnt
+            sys.stdout.write('[EVAL] step: {0:4} | [ENTITY] precision: {1:3.4f}, recall: {2:3.4f}, f1: {3:3.4f}'.format(it + 1, precision, recall, f1) + '\r')
             sys.stdout.flush()
             print("")
-        return iter_precision / iter_sample, iter_recall / iter_sample, iter_f1 / iter_sample, iter_fp / iter_sample, iter_fn / iter_sample, iter_within / iter_sample, iter_outer / iter_sample
+        return precision, recall, f1, fp_error, fn_error, within_error, outer_error
