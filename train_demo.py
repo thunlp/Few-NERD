@@ -89,14 +89,7 @@ def main():
     model_name = opt.model
     max_length = opt.max_length
 
-    if opt.mode != 'supervised' and opt.model == 'basic-bert':
-        print(f'[ERROR] {opt.model} cannot be run on {opt.mode} dataset!')
-        return
-    
-    if opt.mode == 'supervised':
-        print("Supervised NER")
-    else:
-        print("{}-way-{}-shot Few-Shot NER".format(N, K))
+    print("{}-way-{}-shot Few-Shot NER".format(N, K))
     print("model: {}".format(model_name))
     print("max_length: {}".format(max_length))
     print('mode: {}'.format(opt.mode))
