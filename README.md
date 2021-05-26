@@ -4,6 +4,14 @@
 
 This is the source code of the ACL-IJCNLP 2021 paper:  [**Few-NERD: A Few-shot Named Entity Recognition Dataset**](https://www.stingning.cn/assets/pdf/ACL2021-fewnerd.pdf). Check out the [website](https://ningding97.github.io/fewnerd/) of Few-NERD. 
 
+
+
+---------------------------------------------------Updates---------------------------------------------------
+
+- 26/05/202: The current Few-NERD (SUP) is sentence-level, we will soon release  Few-NERD (SUP) 1.1, which is paragraph-level and contains more contextual information.
+
+
+
 ## Contents
 
 - [Website](https://ningding97.github.io/fewnerd/)
