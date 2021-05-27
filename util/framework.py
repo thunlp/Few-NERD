@@ -244,10 +244,6 @@ class FewShotNERModel(nn.Module):
         pred_cnt = self.__get_cnt__(pred_class_span)
         label_cnt = self.__get_cnt__(label_class_span)
         correct_cnt = self.__get_intersect_by_entity__(pred_class_span, label_class_span)
-        #precision = correct_cnt / (pred_cnt + 1e-6)
-        #recall = correct_cnt / label_cnt
-        #f1 = 2*precision*recall / (precision + recall + 1e-6)
-        #return precision, recall, f1
         return pred_cnt, label_cnt, correct_cnt
 
     def error_analysis(self, pred, label, query):
@@ -259,13 +255,11 @@ class FewShotNERModel(nn.Module):
         pred = pred.view(-1)
         label = label.view(-1)
         fp = torch.sum(((pred != 0) & (label == 0)).type(torch.FloatTensor))
-        true_o = torch.sum(((label == 0)).type(torch.FloatTensor))
         fn = torch.sum(((pred == 0) & (label != 0)).type(torch.FloatTensor))
-        true_i = torch.sum(((label != 0)).type(torch.FloatTensor))
         pred = pred.cpu().numpy().tolist()
         label = label.cpu().numpy().tolist()
         within, outer, total_span = self.__get_type_error__(pred, label, query)
-        return fp, fn, true_o, true_i, within, outer, total_span
+        return fp, fn, len(pred), within, outer, total_span
 
 
 class FewShotNERFramework:
@@ -500,8 +494,7 @@ class FewShotNERFramework:
 
         fp_cnt = 0 # misclassify O as I-
         fn_cnt = 0 # misclassify I- as O
-        true_o_cnt = 0 # total O token cnt
-        true_i_cnt = 0 # total "type" token cnt
+        total_token_cnt = 0 # total token cnt
         within_cnt = 0 # span correct but of wrong fine-grained type 
         outer_cnt = 0 # span correct but of wrong coarse-grained type
         total_span_cnt = 0 # span correct
@@ -520,15 +513,14 @@ class FewShotNERFramework:
                     pred = self.viterbi_decode(logits, query['label'])
 
                 tmp_pred_cnt, tmp_label_cnt, correct = model.metrics_by_entity(pred, label)
-                fp, fn, true_o, true_i, within, outer, total_span = model.error_analysis(pred, label, query)
+                fp, fn, token_cnt, within, outer, total_span = model.error_analysis(pred, label, query)
                 pred_cnt += tmp_pred_cnt
                 label_cnt += tmp_label_cnt
                 correct_cnt += correct
 
                 fn_cnt += self.item(fn.data)
                 fp_cnt += self.item(fp.data)
-                true_o_cnt += true_o
-                true_i_cnt += true_i
+                total_token_cnt += token_cnt
                 outer_cnt += outer
                 within_cnt += within
                 total_span_cnt += total_span
@@ -536,8 +528,8 @@ class FewShotNERFramework:
             precision = correct_cnt / pred_cnt
             recall = correct_cnt /label_cnt
             f1 = 2 * precision * recall / (precision + recall)
-            fp_error = fp_cnt / true_o_cnt
-            fn_error = fn_cnt / true_i_cnt
+            fp_error = fp_cnt / total_token_cnt
+            fn_error = fn_cnt / total_token_cnt
             within_error = within_cnt / total_span_cnt
             outer_error = outer_cnt / total_span_cnt
             sys.stdout.write('[EVAL] step: {0:4} | [ENTITY] precision: {1:3.4f}, recall: {2:3.4f}, f1: {3:3.4f}'.format(it + 1, precision, recall, f1) + '\r')
