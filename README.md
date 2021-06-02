@@ -9,7 +9,7 @@ This is the source code of the ACL-IJCNLP 2021 paper:  [**Few-NERD: A Few-shot N
 \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\* **Updates** \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*
 
 - 26/05/2021: The current Few-NERD (SUP) is sentence-level. We will soon release  Few-NERD (SUP) 1.1, which is paragraph-level and contains more contextual information.
-
+- 02/06/2021: To simplify training, we have released the data sampled by episode. click [here](https://cloud.tsinghua.edu.cn/f/8483dc1a34da4a34ab58/?dl=1) to download. The files are named such: `{train/dev/test}_{N}_{K}.txt`. We sampled 20000, 1000, 5000 episodes for train, dev, test, respectively.
 
 
 ## Contents
