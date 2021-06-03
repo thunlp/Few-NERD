@@ -192,7 +192,7 @@ python3 train_demo.py  --mode inter \
 
 ```bash
 python3 train_demo.py  --mode inter \
---lr 1e-3 --batch_size 2 --trainN 5 --N 5 --K 5 --Q 1 \
+--lr 1e-3 --batch_size 2 --trainN 10 --N 10 --K 5 --Q 1 \
 --train_iter 10000 --val_iter 500 --test_iter 5000 --val_step 1000 \
 --max_length 60 --model structshot --tau 0.434
 ```
