@@ -15,6 +15,8 @@ This is the source code of the ACL-IJCNLP 2021 paper:  [**Few-NERD: A Few-shot N
 
 - 26/05/2021: The current Few-NERD (SUP) is sentence-level. We will soon release  Few-NERD (SUP) 1.1, which is paragraph-level and contains more contextual information.
 
+- 11/06/2021: We have modified the word tokenization and we will soon update the latest results. We sincerely thank [tingtingma](https://github.com/mtt1998) and [Chandan Akiti](https://github.com/chandan047)
+
 
 
 ## Contents
