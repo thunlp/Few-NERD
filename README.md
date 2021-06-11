@@ -2,6 +2,9 @@
 
 # Few-NERD: Not Only a Few-shot NER Dataset
 
+![](https://img.shields.io/github/last-commit/thunlp/Few-NERD?color=green) ![](https://img.shields.io/badge/contributions-welcome-red) ![](https://img.shields.io/github/issues/thunlp/Few-NERD?color=yellow) 
+
+
 This is the source code of the ACL-IJCNLP 2021 paper:  [**Few-NERD: A Few-shot Named Entity Recognition Dataset**](https://arxiv.org/abs/2105.07464). Check out the [website](https://ningding97.github.io/fewnerd/) of Few-NERD. 
 
 
