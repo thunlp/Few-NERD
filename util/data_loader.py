@@ -2,6 +2,7 @@ import torch
 import torch.utils.data as data
 import os
 from .fewshotsampler import FewshotSampler, FewshotSampleBase
+import numpy as np
 
 def get_class_name(rawtag):
     # get (finegrained) class name
@@ -62,7 +63,7 @@ class FewShotNERDataset(data.Dataset):
     """
     Fewshot NER Dataset
     """
-    def __init__(self, filepath, encoder, N, K, Q, max_length):
+    def __init__(self, filepath, tokenizer, N, K, Q, max_length, ignore_label_id=-1):
         if not os.path.exists(filepath):
             print("[ERROR] Data file does not exist!")
             assert(0)
@@ -70,10 +71,11 @@ class FewShotNERDataset(data.Dataset):
         self.N = N
         self.K = K
         self.Q = Q
-        self.encoder = encoder
+        self.tokenizer = tokenizer
         self.samples, self.classes = self.__load_data_from_file__(filepath)
         self.max_length = max_length
         self.sampler = FewshotSampler(N, K, Q, self.samples, classes=self.classes)
+        self.ignore_label_id = ignore_label_id
 
     def __insert_sample__(self, index, sample_classes):
         for item in sample_classes:
@@ -104,20 +106,59 @@ class FewShotNERDataset(data.Dataset):
         classes = list(set(classes))
         return samples, classes
 
-    def __split_tag__(self, tag):
-        tag_list = []
-        while len(tag) > self.max_length - 2:
-            tag_list.append(tag[:self.max_length-2])
-            tag = tag[self.max_length-2:]
-        if tag:
-            tag_list.append(tag)
-        return tag_list
-
     def __getraw__(self, sample):
-        # get tokenized word list, attention mask, text mask (mask [CLS], [SEP] as well)
-        word, mask, text_mask = self.encoder.tokenize(sample.words)
-        tag = self.__split_tag__(sample.normalized_tags)
-        return word, mask, text_mask, tag
+        # get tokenized word list, attention mask, text mask (mask [CLS], [SEP] as well), tags
+        tokens = []
+        labels = []
+        for word, tag in zip(sample.words, sample.normalized_tags):
+            word_tokens = self.tokenizer.tokenize(word)
+            if word_tokens:
+                tokens.extend(word_tokens)
+                # Use the real label id for the first token of the word, and padding ids for the remaining tokens
+                word_labels = [self.tag2label[tag]] + [self.ignore_label_id] * (len(word_tokens) - 1)
+                labels.extend(word_labels)
+                #assert len(tokens) == len(labels), print(word_tokens, word_labels)
+
+        
+        # split into chunks of length (max_length-2)
+        # 2 is for special tokens [CLS] and [SEP]
+        tokens_list = []
+        labels_list = []
+        while len(tokens) > self.max_length - 2:
+            tokens_list.append(tokens[:self.max_length-2])
+            tokens = tokens[self.max_length-2:]
+            labels_list.append(labels[:self.max_length-2])
+            labels = labels[self.max_length-2:]
+        if tokens:
+            tokens_list.append(tokens)
+            labels_list.append(labels)
+
+        # add special tokens and get masks
+        indexed_tokens_list = []
+        mask_list = []
+        text_mask_list = []
+        for i, tokens in enumerate(tokens_list):
+            # token -> ids
+            tokens = ['[CLS]'] + tokens + ['[SEP]']
+            indexed_tokens = self.tokenizer.convert_tokens_to_ids(tokens)
+        
+            # padding
+            while len(indexed_tokens) < self.max_length:
+                indexed_tokens.append(0)
+            indexed_tokens_list.append(indexed_tokens)
+
+            # mask
+            mask = np.zeros((self.max_length), dtype=np.int32)
+            mask[:len(tokens)] = 1
+            mask_list.append(mask)
+
+            # text mask, also mask [CLS] and [SEP]
+            text_mask = np.zeros((self.max_length), dtype=np.int32)
+            text_mask[1:len(tokens)-1] = 1
+            text_mask_list.append(text_mask)
+
+            assert len(labels_list[i]) == len(tokens) - 2, print(labels_list[i], tokens)
+        return indexed_tokens_list, mask_list, text_mask_list, labels_list
 
     def __additem__(self, index, d, word, mask, text_mask, label):
         d['index'].append(index)
@@ -139,11 +180,10 @@ class FewShotNERDataset(data.Dataset):
         '''
         dataset = {'index':[], 'word': [], 'mask': [], 'label':[], 'sentence_num':[], 'text_mask':[] }
         for idx in idx_list:
-            word, mask, text_mask, tag = self.__getraw__(self.samples[idx])
+            word, mask, text_mask, label = self.__getraw__(self.samples[idx])
             word = torch.tensor(word).long()
             mask = torch.tensor(mask).long()
             text_mask = torch.tensor(text_mask).long()
-            label = [[self.tag2label[t] for t in ta] for ta in tag]
             self.__additem__(idx, dataset, word, mask, text_mask, label)
         dataset['sentence_num'] = [len(dataset['word'])]
         if savelabeldic:
@@ -182,9 +222,9 @@ def collate_fn(data):
     batch_query['label'] = [torch.tensor(tag_list).long() for tag_list in batch_query['label']]
     return batch_support, batch_query
 
-def get_loader(filepath, encoder, N, K, Q, batch_size, max_length, 
-        num_workers=8, collate_fn=collate_fn):
-    dataset = FewShotNERDataset(filepath, encoder, N, K, Q, max_length)
+def get_loader(filepath, tokenizer, N, K, Q, batch_size, max_length, 
+        num_workers=8, collate_fn=collate_fn, ignore_index=-1):
+    dataset = FewShotNERDataset(filepath, tokenizer, N, K, Q, max_length, ignore_label_id=ignore_index)
     data_loader = data.DataLoader(dataset=dataset,
             batch_size=batch_size,
             shuffle=False,

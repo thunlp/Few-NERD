@@ -8,8 +8,8 @@ from torch.nn import functional as F
 
 class NNShot(util.framework.FewShotNERModel):
     
-    def __init__(self,word_encoder, dot=False):
-        util.framework.FewShotNERModel.__init__(self, word_encoder)
+    def __init__(self,word_encoder, dot=False, ignore_index=-1):
+        util.framework.FewShotNERModel.__init__(self, word_encoder, ignore_index=ignore_index)
         self.drop = nn.Dropout()
         self.dot = dot
 
@@ -36,7 +36,7 @@ class NNShot(util.framework.FewShotNERModel):
         nearest_dist = torch.stack(nearest_dist, dim=1) # [num_of_query_tokens, class_num]
         return nearest_dist
 
-    def forward(self, support, query, N, K, total_Q):
+    def forward(self, support, query):
         '''
         support: Inputs of the support set.
         query: Inputs of the query set.

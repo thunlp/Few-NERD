@@ -8,8 +8,8 @@ from torch.nn import functional as F
 
 class Proto(util.framework.FewShotNERModel):
     
-    def __init__(self,word_encoder, dot=False):
-        util.framework.FewShotNERModel.__init__(self, word_encoder)
+    def __init__(self,word_encoder, dot=False, ignore_index=-1):
+        util.framework.FewShotNERModel.__init__(self, word_encoder, ignore_index=ignore_index)
         self.drop = nn.Dropout()
         self.dot = dot
 
@@ -35,7 +35,7 @@ class Proto(util.framework.FewShotNERModel):
         proto = torch.stack(proto)
         return proto
 
-    def forward(self, support, query, N, K, total_Q):
+    def forward(self, support, query):
         '''
         support: Inputs of the support set.
         query: Inputs of the query set.

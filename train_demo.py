@@ -1,3 +1,4 @@
+from transformers import BertTokenizer
 from util.data_loader import get_loader
 from util.framework import FewShotNERFramework
 from util.word_encoder import BERTWordEncoder
@@ -62,6 +63,8 @@ def main():
            help='checkpoint name.')
     parser.add_argument('--seed', type=int, default=0,
            help='random seed')
+    parser.add_argument('--ignore_index', type=int, default=-1,
+           help='label index to ignore when calculating loss and metrics')
 
 
     # only for bert / roberta
@@ -98,8 +101,8 @@ def main():
     print('loading model and tokenizer...')
     pretrain_ckpt = opt.pretrain_ckpt or 'bert-base-uncased'
     word_encoder = BERTWordEncoder(
-            pretrain_ckpt,
-            max_length)
+            pretrain_ckpt)
+    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
     print('loading data...')
     opt.train = f'data/{opt.mode}/train.txt'
@@ -108,12 +111,12 @@ def main():
     if not (os.path.exists(opt.train) and os.path.exists(opt.dev) and os.path.exists(opt.test)):
         os.system(f'bash data/download.sh {opt.mode}')
 
-    train_data_loader = get_loader(opt.train, word_encoder,
-            N=trainN, K=K, Q=Q, batch_size=batch_size, max_length=max_length)
-    val_data_loader = get_loader(opt.dev, word_encoder,
-            N=N, K=K, Q=Q, batch_size=batch_size, max_length=max_length)
-    test_data_loader = get_loader(opt.test, word_encoder,
-            N=N, K=K, Q=Q, batch_size=batch_size, max_length=max_length)
+    train_data_loader = get_loader(opt.train, tokenizer,
+            N=trainN, K=K, Q=Q, batch_size=batch_size, max_length=max_length, ignore_index=opt.ignore_index)
+    val_data_loader = get_loader(opt.dev, tokenizer,
+            N=N, K=K, Q=Q, batch_size=batch_size, max_length=max_length, ignore_index=opt.ignore_index)
+    test_data_loader = get_loader(opt.test, tokenizer,
+            N=N, K=K, Q=Q, batch_size=batch_size, max_length=max_length, ignore_index=opt.ignore_index)
 
         
     prefix = '-'.join([model_name, opt.mode, str(N), str(K), 'seed'+str(opt.seed)])
@@ -124,15 +127,15 @@ def main():
     
     if model_name == 'proto':
         print('use proto')
-        model = Proto(word_encoder, dot=opt.dot)
+        model = Proto(word_encoder, dot=opt.dot, ignore_index=opt.ignore_index)
         framework = FewShotNERFramework(train_data_loader, val_data_loader, test_data_loader)
     elif model_name == 'nnshot':
         print('use nnshot')
-        model = NNShot(word_encoder, dot=opt.dot)
+        model = NNShot(word_encoder, dot=opt.dot, ignore_index=opt.ignore_index)
         framework = FewShotNERFramework(train_data_loader, val_data_loader, test_data_loader)
     elif model_name == 'structshot':
         print('use structshot')
-        model = NNShot(word_encoder, dot=opt.dot)
+        model = NNShot(word_encoder, dot=opt.dot, ignore_index=opt.ignore_index)
         framework = FewShotNERFramework(train_data_loader, val_data_loader, test_data_loader, N=opt.N, tau=opt.tau, train_fname=opt.train, viterbi=True)
     else:
         raise NotImplementedError
@@ -151,7 +154,7 @@ def main():
         if opt.lr == -1:
             opt.lr = 2e-5
 
-        framework.train(model, prefix, batch_size, trainN, N, K, Q,
+        framework.train(model, prefix,
                 load_ckpt=opt.load_ckpt, save_ckpt=ckpt,
                 val_step=opt.val_step, fp16=opt.fp16,
                 train_iter=opt.train_iter, warmup_step=int(opt.train_iter * 0.1), val_iter=opt.val_iter, learning_rate=opt.lr, use_sgd_for_bert=opt.use_sgd_for_bert)
@@ -162,7 +165,7 @@ def main():
             ckpt = 'none'
 
     # test
-    precision, recall, f1, fp, fn, within, outer = framework.eval(model, batch_size, N, K, Q, opt.test_iter, ckpt=ckpt)
+    precision, recall, f1, fp, fn, within, outer = framework.eval(model, opt.test_iter, ckpt=ckpt)
     print("RESULT: precision: %.4f, recall: %.4f, f1:%.4f" % (precision, recall, f1))
     print('ERROR ANALYSIS: fp: %.4f, fn: %.4f, within:%.4f, outer: %.4f'%(fp, fn, within, outer))
 

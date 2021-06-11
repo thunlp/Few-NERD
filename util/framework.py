@@ -59,16 +59,16 @@ def warmup_linear(global_step, warmup_step):
         return 1.0
 
 class FewShotNERModel(nn.Module):
-    def __init__(self, my_word_encoder):
+    def __init__(self, my_word_encoder, ignore_index=-1):
         '''
         word_encoder: Sentence encoder
         
         You need to set self.cost as your own loss function.
         '''
         nn.Module.__init__(self)
+        self.ignore_index = ignore_index
         self.word_encoder = nn.DataParallel(my_word_encoder)
-        # self.word_encoder = my_word_encoder
-        self.cost = nn.CrossEntropyLoss(ignore_index=-1)
+        self.cost = nn.CrossEntropyLoss(ignore_index=ignore_index)
 
     
     def forward(self, support, query, N, K, Q):
@@ -90,6 +90,12 @@ class FewShotNERModel(nn.Module):
         '''
         N = logits.size(-1)
         return self.cost(logits.view(-1, N), label.view(-1))
+    
+    def __delete_ignore_index(self, pred, label):
+        pred = pred[label != self.ignore_index]
+        label = label[label != self.ignore_index]
+        assert pred.shape[0] == label.shape[0]
+        return pred, label
 
     def accuracy(self, pred, label):
         '''
@@ -97,6 +103,7 @@ class FewShotNERModel(nn.Module):
         label: Label with whatever size
         return: [Accuracy] (A single value)
         '''
+        pred, label = self.__delete_ignore_index(pred, label)
         return torch.mean((pred.view(-1) == label.view(-1)).type(torch.FloatTensor))
 
     def __get_class_span_dict__(self, label, is_string=False):
@@ -165,11 +172,15 @@ class FewShotNERModel(nn.Module):
         pred_tag = []
         label_tag = []
         current_sent_idx = 0 # record sentence index in the batch data
-        current_token_idx = 0 # record token indes in the batch data
+        current_token_idx = 0 # record token index in the batch data
         assert len(query['sentence_num']) == len(query['label2tag'])
         # iterate by each query set
         for idx, num in enumerate(query['sentence_num']):
-            true_label = torch.cat(query['label'][current_sent_idx:current_sent_idx+num], 0).cpu().numpy().tolist()
+            true_label = torch.cat(query['label'][current_sent_idx:current_sent_idx+num], 0)
+            # drop ignore index
+            true_label = true_label[true_label!=self.ignore_index]
+            
+            true_label = true_label.cpu().numpy().tolist()
             set_token_length = len(true_label)
             # use the idx-th label2tag dict
             pred_tag += [query['label2tag'][idx][label] for label in pred[current_token_idx:current_token_idx + set_token_length]]
@@ -237,8 +248,11 @@ class FewShotNERModel(nn.Module):
         '''
         return entity level count of total prediction, true labels, and correct prediction
         '''
-        pred = pred.view(-1).cpu().numpy().tolist()
-        label = label.view(-1).cpu().numpy().tolist()
+        pred = pred.view(-1)
+        label = label.view(-1)
+        pred, label = self.__delete_ignore_index(pred, label)
+        pred = pred.cpu().numpy().tolist()
+        label = label.cpu().numpy().tolist()
         pred_class_span = self.__get_class_span_dict__(pred)
         label_class_span = self.__get_class_span_dict__(label)
         pred_cnt = self.__get_cnt__(pred_class_span)
@@ -254,8 +268,9 @@ class FewShotNERModel(nn.Module):
         '''
         pred = pred.view(-1)
         label = label.view(-1)
-        fp = torch.sum(((pred != 0) & (label == 0)).type(torch.FloatTensor))
-        fn = torch.sum(((pred == 0) & (label != 0)).type(torch.FloatTensor))
+        pred, label = self.__delete_ignore_index(pred, label)
+        fp = torch.sum(((pred > 0) & (label == 0)).type(torch.FloatTensor))
+        fn = torch.sum(((pred == 0) & (label > 0)).type(torch.FloatTensor))
         pred = pred.cpu().numpy().tolist()
         label = label.cpu().numpy().tolist()
         within, outer, total_span = self.__get_type_error__(pred, label, query)
@@ -304,7 +319,6 @@ class FewShotNERFramework:
     def train(self,
               model,
               model_name,
-              B, N_for_train, N_for_eval, K, Q,
               learning_rate=1e-1,
               train_iter=30000,
               val_iter=1000,
@@ -383,8 +397,8 @@ class FewShotNERFramework:
                 label = torch.cat(query['label'], 0)
                 label = label.cuda()
 
-            logits, pred = model(support, query, 
-                    N_for_train, K, Q * N_for_train)
+            logits, pred = model(support, query)
+            assert logits.shape[0] == label.shape[0], print(logits.shape, label.shape)
             loss = model.loss(logits, label) / float(grad_iter)
             tmp_pred_cnt, tmp_label_cnt, correct = model.metrics_by_entity(pred, label)
                 
@@ -414,7 +428,7 @@ class FewShotNERFramework:
             sys.stdout.flush()
 
             if (it + 1) % val_step == 0:
-                _, _, f1, _, _, _, _ = self.eval(model, B, N_for_eval, K, Q, val_iter)
+                _, _, f1, _, _, _, _ = self.eval(model, val_iter)
                 model.train()
                 if f1 > best_f1:
                     print('Best checkpoint')
@@ -458,7 +472,6 @@ class FewShotNERFramework:
 
     def eval(self,
             model,
-            B, N, K, Q,
             eval_iter,
             ckpt=None): 
         '''
@@ -508,7 +521,7 @@ class FewShotNERFramework:
                             query[k] = query[k].cuda()
                     label = torch.cat(query['label'], 0)
                     label = label.cuda()
-                logits, pred = model(support, query, N, K, Q * N)
+                logits, pred = model(support, query)
                 if self.viterbi:
                     pred = self.viterbi_decode(logits, query['label'])
 
