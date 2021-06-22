@@ -33,7 +33,7 @@ This is the source code of the ACL-IJCNLP 2021 paper:  [**Few-NERD: A Few-shot N
     - [N way K~2K shot Sampler](#Sampler)
   - [How to Run](#How-to-Run)
 - [Citation](#Citation)
-- [Connection](Connection)
+- [Connection](#Connection)
 
 ## Overview
 
