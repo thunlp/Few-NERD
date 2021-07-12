@@ -179,36 +179,36 @@ Run `train_demo.py`. The arguments are presented below. The default parameters 
 
 ```bash
 python3 train_demo.py  --mode inter \
---lr 1e-3 --batch_size 2 --trainN 5 --N 5 --K 1 --Q 1 \
+--lr 1e-4 --batch_size 8 --trainN 5 --N 5 --K 1 --Q 1 \
 --train_iter 10000 --val_iter 500 --test_iter 5000 --val_step 1000 \
---max_length 60 --model structshot --tau 0.32
+--max_length 64 --model structshot --tau 0.32
 ```
 
 **5-way-5~10-shot**
 
 ```bash
 python3 train_demo.py  --mode inter \
---lr 1e-3 --batch_size 2 --trainN 5 --N 5 --K 5 --Q 5 \
+--lr 1e-4 --batch_size 1 --trainN 5 --N 5 --K 5 --Q 5 \
 --train_iter 10000 --val_iter 500 --test_iter 5000 --val_step 1000 \
---max_length 60 --model structshot --tau 0.318
+--max_length 32 --model structshot --tau 0.318
 ```
 
 **10-way-1~5-shot**
 
 ```bash
 python3 train_demo.py  --mode inter \
---lr 1e-3 --batch_size 2 --trainN 10 --N 10 --K 1 --Q 1 \
+--lr 1e-4 --batch_size 4 --trainN 10 --N 10 --K 1 --Q 1 \
 --train_iter 10000 --val_iter 500 --test_iter 5000 --val_step 1000 \
---max_length 60 --model structshot --tau 0.32
+--max_length 64 --model structshot --tau 0.32
 ```
 
 **10-way-5~10-shot**
 
 ```bash
 python3 train_demo.py  --mode inter \
---lr 1e-3 --batch_size 2 --trainN 10 --N 10 --K 5 --Q 1 \
+--lr 1e-4 --batch_size 1 --trainN 10 --N 10 --K 5 --Q 1 \
 --train_iter 10000 --val_iter 500 --test_iter 5000 --val_step 1000 \
---max_length 60 --model structshot --tau 0.434
+--max_length 32 --model structshot --tau 0.434
 ```
 
 
