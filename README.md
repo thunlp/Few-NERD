@@ -63,9 +63,9 @@ pip install -r requirements.txt
 
 - Few-NERD contains 8 coarse-grained types, 66 fine-grained types, 188,200 sentences, 491,711 entities and 4,601,223 tokens.
 - We have splitted the data into 3 training mode. One for supervised setting-`supervised`, the other two for few-shot setting `inter` and `intra`. Each contains three files `train.txt`, `dev.txt`, `test.txt`. `supervised`datasets are randomly split. `inter` datasets are randomly split within coarse type, i.e. each file contains all 8 coarse types but different fine-grained types. `intra` datasets are randomly split by coarse type.
-- The splitted dataset can be downloaded automatically once you run the model. **If you want to download the data manually, run data/download.sh, remember to add parameter supervised/inter/intra to indicte the type of the dataset**
+- The splitted dataset can be downloaded automatically once you run the model. **If you want to download the data manually, run data/download.sh, remember to add parameter supervised/inter/intra to indicate the type of the dataset**
 
-To obtain the three benchmark datasets of Few-NERD, simply run the bash file `data/download.sh`
+To obtain the three benchmark datasets of Few-NERD, simply run the bash file `data/download.sh` with parameter `supervised/inter/intra` as below
 
 ```shell
 bash data/download.sh supervised
@@ -75,7 +75,7 @@ To get the data sampled by episode, run
 
 ```shell
 bash data/download.sh episode-data
-unzip data/episode-data.zip
+unzip -d data/ data/episode-data.zip
 ```
 
 ### Data Format
@@ -134,7 +134,13 @@ As established in our paper, we design an *N way K~2K shot* sampling strategy in
 
  Prototypical nets with BERT is implemented in `model/proto.py`.
 
+#### NNShot & StructShot
 
+NNShot with BERT is implemented in `model/nnshot.py`. 
+
+StructShot is realized by adding an extra viterbi decoder in `util/framework.py`. 
+
+**Note that the backbone BERT encoder we used for structshot model is not pre-trained with NER task**
 
 ## How to Run
 
