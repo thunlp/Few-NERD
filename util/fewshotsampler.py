@@ -67,12 +67,10 @@ class FewshotSampler:
         isvalid = False
         for class_name in class_count:
             if class_name not in target_classes:
-                isvalid = False
-            elif class_name not in set_class:
-                isvalid = True
-            elif set_class[class_name] + class_count[class_name] > threshold:
-                isvalid = False
-            elif set_class[class_name] < set_class['k']:
+                return False
+            if class_count[class_name] + set_class.get(class_name, 0) > threshold:
+                return False
+            if set_class.get(class_name, 0) < set_class['k']:
                 isvalid = True
         return isvalid
 
