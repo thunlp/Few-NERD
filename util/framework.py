@@ -279,7 +279,7 @@ class FewShotNERModel(nn.Module):
 
 class FewShotNERFramework:
 
-    def __init__(self, train_data_loader, val_data_loader, test_data_loader, adv_data_loader=None, viterbi=False, N=None, train_fname=None, tau=0.05):
+    def __init__(self, train_data_loader, val_data_loader, test_data_loader, viterbi=False, N=None, train_fname=None, tau=0.05):
         '''
         train_data_loader: DataLoader for training.
         val_data_loader: DataLoader for validating.
@@ -288,7 +288,6 @@ class FewShotNERFramework:
         self.train_data_loader = train_data_loader
         self.val_data_loader = val_data_loader
         self.test_data_loader = test_data_loader
-        self.adv_data_loader = adv_data_loader
         self.viterbi = viterbi
         if viterbi:
             abstract_transitions = get_abstract_transitions(train_fname)
@@ -370,9 +369,6 @@ class FewShotNERFramework:
                     continue
                 print('load {} from {}'.format(name, load_ckpt))
                 own_state[name].copy_(param)
-            start_iter = 0
-        else:
-            start_iter = 0
 
         if fp16:
             from apex import amp
@@ -387,58 +383,65 @@ class FewShotNERFramework:
         pred_cnt = 0
         label_cnt = 0
         correct_cnt = 0
-        for it in range(start_iter, start_iter + train_iter):
-            support, query = next(self.train_data_loader)
-            if torch.cuda.is_available():
-                for k in support:
-                    if k != 'label' and k != 'sentence_num':
-                        support[k] = support[k].cuda()
-                        query[k] = query[k].cuda()
-                label = torch.cat(query['label'], 0)
-                label = label.cuda()
 
-            logits, pred = model(support, query)
-            assert logits.shape[0] == label.shape[0], print(logits.shape, label.shape)
-            loss = model.loss(logits, label) / float(grad_iter)
-            tmp_pred_cnt, tmp_label_cnt, correct = model.metrics_by_entity(pred, label)
+        it = 0
+        while it + 1 < train_iter:
+            for _, (support, query) in enumerate(self.train_data_loader):
+                # support, query = next(self.train_data_loader)
+                if torch.cuda.is_available():
+                    for k in support:
+                        if k != 'label' and k != 'sentence_num':
+                            support[k] = support[k].cuda()
+                            query[k] = query[k].cuda()
+                    label = torch.cat(query['label'], 0)
+                    label = label.cuda()
+
+                logits, pred = model(support, query)
+                assert logits.shape[0] == label.shape[0], print(logits.shape, label.shape)
+                loss = model.loss(logits, label) / float(grad_iter)
+                tmp_pred_cnt, tmp_label_cnt, correct = model.metrics_by_entity(pred, label)
+                    
+                if fp16:
+                    with amp.scale_loss(loss, optimizer) as scaled_loss:
+                        scaled_loss.backward()
+                else:
+                    loss.backward()
                 
-            if fp16:
-                with amp.scale_loss(loss, optimizer) as scaled_loss:
-                    scaled_loss.backward()
-            else:
-                loss.backward()
-            
-            if it % grad_iter == 0:
-                optimizer.step()
-                scheduler.step()
-                optimizer.zero_grad()
+                if it % grad_iter == 0:
+                    optimizer.step()
+                    scheduler.step()
+                    optimizer.zero_grad()
 
-            iter_loss += self.item(loss.data)
-            #iter_right += self.item(right.data)
-            pred_cnt += tmp_pred_cnt
-            label_cnt += tmp_label_cnt
-            correct_cnt += correct
-            iter_sample += 1
-            if (it + 1) % 100 == 0 or (it + 1) % val_step == 0:
-                precision = correct_cnt / pred_cnt
-                recall = correct_cnt / label_cnt
-                f1 = 2 * precision * recall / (precision + recall)
-                sys.stdout.write('step: {0:4} | loss: {1:2.6f} | [ENTITY] precision: {2:3.4f}, recall: {3:3.4f}, f1: {4:3.4f}'\
-                    .format(it + 1, iter_loss/ iter_sample, precision, recall, f1) + '\r')
-            sys.stdout.flush()
+                iter_loss += self.item(loss.data)
+                #iter_right += self.item(right.data)
+                pred_cnt += tmp_pred_cnt
+                label_cnt += tmp_label_cnt
+                correct_cnt += correct
+                iter_sample += 1
+                if (it + 1) % 100 == 0 or (it + 1) % val_step == 0:
+                    precision = correct_cnt / pred_cnt
+                    recall = correct_cnt / label_cnt
+                    f1 = 2 * precision * recall / (precision + recall)
+                    sys.stdout.write('step: {0:4} | loss: {1:2.6f} | [ENTITY] precision: {2:3.4f}, recall: {3:3.4f}, f1: {4:3.4f}'\
+                        .format(it + 1, iter_loss/ iter_sample, precision, recall, f1) + '\r')
+                sys.stdout.flush()
 
-            if (it + 1) % val_step == 0:
-                _, _, f1, _, _, _, _ = self.eval(model, val_iter)
-                model.train()
-                if f1 > best_f1:
-                    print('Best checkpoint')
-                    torch.save({'state_dict': model.state_dict()}, save_ckpt)
-                    best_f1 = f1
-                iter_loss = 0.
-                iter_sample = 0.
-                pred_cnt = 0
-                label_cnt = 0
-                correct_cnt = 0
+                if (it + 1) % val_step == 0:
+                    _, _, f1, _, _, _, _ = self.eval(model, val_iter)
+                    model.train()
+                    if f1 > best_f1:
+                        print('Best checkpoint')
+                        torch.save({'state_dict': model.state_dict()}, save_ckpt)
+                        best_f1 = f1
+                    iter_loss = 0.
+                    iter_sample = 0.
+                    pred_cnt = 0
+                    label_cnt = 0
+                    correct_cnt = 0
+
+                if (it + 1)  == train_iter:
+                    break
+                it += 1
                 
         print("\n####################\n")
         print("Finish training " + model_name)
@@ -511,32 +514,40 @@ class FewShotNERFramework:
         within_cnt = 0 # span correct but of wrong fine-grained type 
         outer_cnt = 0 # span correct but of wrong coarse-grained type
         total_span_cnt = 0 # span correct
+
+        eval_iter = min(eval_iter, len(eval_dataset))
+
         with torch.no_grad():
-            for it in range(eval_iter):
-                support, query = next(eval_dataset)
-                if torch.cuda.is_available():
-                    for k in support:
-                        if k != 'label' and k != 'sentence_num':
-                            support[k] = support[k].cuda()
-                            query[k] = query[k].cuda()
-                    label = torch.cat(query['label'], 0)
-                    label = label.cuda()
-                logits, pred = model(support, query)
-                if self.viterbi:
-                    pred = self.viterbi_decode(logits, query['label'])
+            it = 0
+            while it + 1 < eval_iter:
+                for _, (support, query) in enumerate(eval_dataset):
+                    if torch.cuda.is_available():
+                        for k in support:
+                            if k != 'label' and k != 'sentence_num':
+                                support[k] = support[k].cuda()
+                                query[k] = query[k].cuda()
+                        label = torch.cat(query['label'], 0)
+                        label = label.cuda()
+                    logits, pred = model(support, query)
+                    if self.viterbi:
+                        pred = self.viterbi_decode(logits, query['label'])
 
-                tmp_pred_cnt, tmp_label_cnt, correct = model.metrics_by_entity(pred, label)
-                fp, fn, token_cnt, within, outer, total_span = model.error_analysis(pred, label, query)
-                pred_cnt += tmp_pred_cnt
-                label_cnt += tmp_label_cnt
-                correct_cnt += correct
+                    tmp_pred_cnt, tmp_label_cnt, correct = model.metrics_by_entity(pred, label)
+                    fp, fn, token_cnt, within, outer, total_span = model.error_analysis(pred, label, query)
+                    pred_cnt += tmp_pred_cnt
+                    label_cnt += tmp_label_cnt
+                    correct_cnt += correct
 
-                fn_cnt += self.item(fn.data)
-                fp_cnt += self.item(fp.data)
-                total_token_cnt += token_cnt
-                outer_cnt += outer
-                within_cnt += within
-                total_span_cnt += total_span
+                    fn_cnt += self.item(fn.data)
+                    fp_cnt += self.item(fp.data)
+                    total_token_cnt += token_cnt
+                    outer_cnt += outer
+                    within_cnt += within
+                    total_span_cnt += total_span
+
+                    if it + 1 == eval_iter:
+                        break
+                    it += 1
 
             precision = correct_cnt / pred_cnt
             recall = correct_cnt /label_cnt

@@ -65,6 +65,8 @@ def main():
            help='random seed')
     parser.add_argument('--ignore_index', type=int, default=-1,
            help='label index to ignore when calculating loss and metrics')
+    parser.add_argument('--use_sampled_data', action='store_true',
+           help='use released sampled data, the data should be stored at "data/episode-data/" ')
 
 
     # only for bert / roberta
@@ -105,18 +107,26 @@ def main():
     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
     print('loading data...')
-    opt.train = f'data/{opt.mode}/train.txt'
-    opt.test = f'data/{opt.mode}/test.txt'
-    opt.dev = f'data/{opt.mode}/dev.txt'
-    if not (os.path.exists(opt.train) and os.path.exists(opt.dev) and os.path.exists(opt.test)):
-        os.system(f'bash data/download.sh {opt.mode}')
+    if not opt.use_sampled_data:
+        opt.train = f'data/{opt.mode}/train.txt'
+        opt.test = f'data/{opt.mode}/test.txt'
+        opt.dev = f'data/{opt.mode}/dev.txt'
+        if not (os.path.exists(opt.train) and os.path.exists(opt.dev) and os.path.exists(opt.test)):
+            os.system(f'bash data/download.sh {opt.mode}')
+    else:
+        opt.train = f'data/episode-data/{opt.mode}/train_{opt.N}_{opt.K}.jsonl'
+        opt.test = f'data/episode-data/{opt.mode}/test_{opt.N}_{opt.K}.jsonl'
+        opt.dev = f'data/episode-data/{opt.mode}/dev_{opt.N}_{opt.K}.jsonl'
+        if not (os.path.exists(opt.train) and os.path.exists(opt.dev) and os.path.exists(opt.test)):
+            os.system(f'bash data/download.sh episode-data')
+            os.system('unzip -d data/ data/episode-data.zip')
 
     train_data_loader = get_loader(opt.train, tokenizer,
-            N=trainN, K=K, Q=Q, batch_size=batch_size, max_length=max_length, ignore_index=opt.ignore_index)
+            N=trainN, K=K, Q=Q, batch_size=batch_size, max_length=max_length, ignore_index=opt.ignore_index, use_sampled_data=opt.use_sampled_data)
     val_data_loader = get_loader(opt.dev, tokenizer,
-            N=N, K=K, Q=Q, batch_size=batch_size, max_length=max_length, ignore_index=opt.ignore_index)
+            N=N, K=K, Q=Q, batch_size=batch_size, max_length=max_length, ignore_index=opt.ignore_index, use_sampled_data=opt.use_sampled_data)
     test_data_loader = get_loader(opt.test, tokenizer,
-            N=N, K=K, Q=Q, batch_size=batch_size, max_length=max_length, ignore_index=opt.ignore_index)
+            N=N, K=K, Q=Q, batch_size=batch_size, max_length=max_length, ignore_index=opt.ignore_index, use_sampled_data=opt.use_sampled_data)
 
         
     prefix = '-'.join([model_name, opt.mode, str(N), str(K), 'seed'+str(opt.seed)])

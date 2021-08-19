@@ -20,5 +20,5 @@ wget -O $data_dir/intra/test.txt https://cloud.tsinghua.edu.cn/f/9a1dc235abc746a
 wget -O $data_dir/intra/train.txt https://cloud.tsinghua.edu.cn/f/b169cfbeb90a48c1bf23/?dl=1
 wget -O $data_dir/intra/dev.txt https://cloud.tsinghua.edu.cn/f/997dc82d29064e5ca8de/?dl=1
 elif [ $1 == 'episode-data' ]; then
-wget -O $data_dir/episode-data.zip https://cloud.tsinghua.edu.cn/f/8483dc1a34da4a34ab58/?dl=1
+wget -O $data_dir/episode-data.zip https://cloud.tsinghua.edu.cn/f/0e38bd108d7b49808cc4/?dl=1
 fi

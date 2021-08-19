@@ -3,6 +3,7 @@ import torch.utils.data as data
 import os
 from .fewshotsampler import FewshotSampler, FewshotSampleBase
 import numpy as np
+import json
 
 def get_class_name(rawtag):
     # get (finegrained) class name
@@ -59,7 +60,7 @@ class Sample(FewshotSampleBase):
         newlines = zip(self.words, self.tags)
         return '\n'.join(['\t'.join(line) for line in newlines])
 
-class FewShotNERDataset(data.Dataset):
+class FewShotNERDatasetWithRandomSampling(data.Dataset):
     """
     Fewshot NER Dataset
     """
@@ -106,8 +107,7 @@ class FewShotNERDataset(data.Dataset):
         classes = list(set(classes))
         return samples, classes
 
-    def __getraw__(self, sample):
-        # get tokenized word list, attention mask, text mask (mask [CLS], [SEP] as well), tags
+    def __get_token_label_list__(self, sample):
         tokens = []
         labels = []
         for word, tag in zip(sample.words, sample.normalized_tags):
@@ -117,8 +117,11 @@ class FewShotNERDataset(data.Dataset):
                 # Use the real label id for the first token of the word, and padding ids for the remaining tokens
                 word_labels = [self.tag2label[tag]] + [self.ignore_label_id] * (len(word_tokens) - 1)
                 labels.extend(word_labels)
-                #assert len(tokens) == len(labels), print(word_tokens, word_labels)
+        return tokens, labels
 
+
+    def __getraw__(self, tokens, labels):
+        # get tokenized word list, attention mask, text mask (mask [CLS], [SEP] as well), tags
         
         # split into chunks of length (max_length-2)
         # 2 is for special tokens [CLS] and [SEP]
@@ -180,7 +183,8 @@ class FewShotNERDataset(data.Dataset):
         '''
         dataset = {'index':[], 'word': [], 'mask': [], 'label':[], 'sentence_num':[], 'text_mask':[] }
         for idx in idx_list:
-            word, mask, text_mask, label = self.__getraw__(self.samples[idx])
+            tokens, labels = self.__get_token_label_list__(self.samples[idx])
+            word, mask, text_mask, label = self.__getraw__(tokens, labels)
             word = torch.tensor(word).long()
             mask = torch.tensor(mask).long()
             text_mask = torch.tensor(text_mask).long()
@@ -203,6 +207,82 @@ class FewShotNERDataset(data.Dataset):
     def __len__(self):
         return 1000000000
 
+class FewShotNERDataset(FewShotNERDatasetWithRandomSampling):
+    def __init__(self, filepath, tokenizer, max_length, ignore_label_id=-1):
+        if not os.path.exists(filepath):
+            print("[ERROR] Data file does not exist!")
+            assert(0)
+        self.class2sampleid = {}
+        self.tokenizer = tokenizer
+        self.samples = self.__load_data_from_file__(filepath)
+        self.max_length = max_length
+        self.ignore_label_id = ignore_label_id
+    
+    def __load_data_from_file__(self, filepath):
+        with open(filepath)as f:
+            lines = f.readlines()
+        for i in range(len(lines)):
+            lines[i] = json.loads(lines[i].strip())
+        return lines
+    
+    def __additem__(self, d, word, mask, text_mask, label):
+        d['word'] += word
+        d['mask'] += mask
+        d['label'] += label
+        d['text_mask'] += text_mask
+    
+    def __get_token_label_list__(self, words, tags):
+        tokens = []
+        labels = []
+        for word, tag in zip(words, tags):
+            word_tokens = self.tokenizer.tokenize(word)
+            if word_tokens:
+                tokens.extend(word_tokens)
+                # Use the real label id for the first token of the word, and padding ids for the remaining tokens
+                word_labels = [self.tag2label[tag]] + [self.ignore_label_id] * (len(word_tokens) - 1)
+                labels.extend(word_labels)
+        return tokens, labels
+
+    def __populate__(self, data, savelabeldic=False):
+        '''
+        populate samples into data dict
+        set savelabeldic=True if you want to save label2tag dict
+        'word': tokenized word ids
+        'mask': attention mask in BERT
+        'label': NER labels
+        'sentence_num': number of sentences in this set (a batch contains multiple sets)
+        'text_mask': 0 for special tokens and paddings, 1 for real text
+        '''
+        dataset = {'word': [], 'mask': [], 'label':[], 'sentence_num':[], 'text_mask':[] }
+        for i in range(len(data['word'])):
+            tokens, labels = self.__get_token_label_list__(data['word'][i], data['label'][i])
+            word, mask, text_mask, label = self.__getraw__(tokens, labels)
+            word = torch.tensor(word).long()
+            mask = torch.tensor(mask).long()
+            text_mask = torch.tensor(text_mask).long()
+            self.__additem__(dataset, word, mask, text_mask, label)
+        dataset['sentence_num'] = [len(dataset['word'])]
+        if savelabeldic:
+            dataset['label2tag'] = [self.label2tag]
+        return dataset
+
+    def __getitem__(self, index):
+        sample = self.samples[index]
+        target_classes = sample['types']
+        support = sample['support']
+        query = sample['query']
+        # add 'O' and make sure 'O' is labeled 0
+        distinct_tags = ['O'] + target_classes
+        self.tag2label = {tag:idx for idx, tag in enumerate(distinct_tags)}
+        self.label2tag = {idx:tag for idx, tag in enumerate(distinct_tags)}
+        support_set = self.__populate__(support)
+        query_set = self.__populate__(query, savelabeldic=True)
+        return support_set, query_set
+
+    def __len__(self):
+        return len(self.samples)
+
+
 def collate_fn(data):
     batch_support = {'word': [], 'mask': [], 'label':[], 'sentence_num':[], 'text_mask':[]}
     batch_query = {'word': [], 'mask': [], 'label':[], 'sentence_num':[], 'label2tag':[], 'text_mask':[]}
@@ -223,12 +303,15 @@ def collate_fn(data):
     return batch_support, batch_query
 
 def get_loader(filepath, tokenizer, N, K, Q, batch_size, max_length, 
-        num_workers=8, collate_fn=collate_fn, ignore_index=-1):
-    dataset = FewShotNERDataset(filepath, tokenizer, N, K, Q, max_length, ignore_label_id=ignore_index)
+        num_workers=8, collate_fn=collate_fn, ignore_index=-1, use_sampled_data=True):
+    if not use_sampled_data:
+        dataset = FewShotNERDatasetWithRandomSampling(filepath, tokenizer, N, K, Q, max_length, ignore_label_id=ignore_index)
+    else:
+        dataset = FewShotNERDataset(filepath, tokenizer, max_length, ignore_label_id=ignore_index)
     data_loader = data.DataLoader(dataset=dataset,
             batch_size=batch_size,
-            shuffle=False,
+            shuffle=True,
             pin_memory=True,
             num_workers=num_workers,
             collate_fn=collate_fn)
-    return iter(data_loader)
+    return data_loader

@@ -12,6 +12,7 @@ apex
 data/inter/
 data/intra/
 data/supervised/
+*.zip
 
 
 # Byte-compiled / optimized / DLL files
