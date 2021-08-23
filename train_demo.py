@@ -138,15 +138,15 @@ def main():
     if model_name == 'proto':
         print('use proto')
         model = Proto(word_encoder, dot=opt.dot, ignore_index=opt.ignore_index)
-        framework = FewShotNERFramework(train_data_loader, val_data_loader, test_data_loader)
+        framework = FewShotNERFramework(train_data_loader, val_data_loader, test_data_loader, use_sampled_data=opt.use_sampled_data)
     elif model_name == 'nnshot':
         print('use nnshot')
         model = NNShot(word_encoder, dot=opt.dot, ignore_index=opt.ignore_index)
-        framework = FewShotNERFramework(train_data_loader, val_data_loader, test_data_loader)
+        framework = FewShotNERFramework(train_data_loader, val_data_loader, test_data_loader, use_sampled_data=opt.use_sampled_data)
     elif model_name == 'structshot':
         print('use structshot')
         model = NNShot(word_encoder, dot=opt.dot, ignore_index=opt.ignore_index)
-        framework = FewShotNERFramework(train_data_loader, val_data_loader, test_data_loader, N=opt.N, tau=opt.tau, train_fname=opt.train, viterbi=True)
+        framework = FewShotNERFramework(train_data_loader, val_data_loader, test_data_loader, N=opt.N, tau=opt.tau, train_fname=opt.train, viterbi=True, use_sampled_data=opt.use_sampled_data)
     else:
         raise NotImplementedError
 

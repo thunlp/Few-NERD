@@ -16,12 +16,18 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from .viterbi import ViterbiDecoder
 
 
-def get_abstract_transitions(train_fname):
+def get_abstract_transitions(train_fname, use_sampled_data=True):
     """
     Compute abstract transitions on the training dataset for StructShot
     """
-    samples = data_loader.FewShotNERDataset(train_fname, None, 1,1,1,1).samples
-    tag_lists = [sample.tags for sample in samples]
+    if use_sampled_data:
+        samples = data_loader.FewShotNERDataset(train_fname, None, 1).samples
+        tag_lists = []
+        for sample in samples:
+            tag_lists += sample['support']['label'] + sample['query']['label']
+    else:
+        samples = data_loader.FewShotNERDatasetWithRandomSampling(train_fname, None, 1, 1, 1, 1)
+        tag_lists = [sample.tags for sample in samples]
 
     s_o, s_i = 0., 0.
     o_o, o_i = 0., 0.
@@ -279,7 +285,7 @@ class FewShotNERModel(nn.Module):
 
 class FewShotNERFramework:
 
-    def __init__(self, train_data_loader, val_data_loader, test_data_loader, viterbi=False, N=None, train_fname=None, tau=0.05):
+    def __init__(self, train_data_loader, val_data_loader, test_data_loader, viterbi=False, N=None, train_fname=None, tau=0.05, use_sampled_data=True):
         '''
         train_data_loader: DataLoader for training.
         val_data_loader: DataLoader for validating.
@@ -290,7 +296,7 @@ class FewShotNERFramework:
         self.test_data_loader = test_data_loader
         self.viterbi = viterbi
         if viterbi:
-            abstract_transitions = get_abstract_transitions(train_fname)
+            abstract_transitions = get_abstract_transitions(train_fname, use_sampled_data=use_sampled_data)
             self.viterbi_decoder = ViterbiDecoder(N+2, abstract_transitions, tau)
     
     def __load_model__(self, ckpt):
