@@ -26,7 +26,7 @@ def get_abstract_transitions(train_fname, use_sampled_data=True):
         for sample in samples:
             tag_lists += sample['support']['label'] + sample['query']['label']
     else:
-        samples = data_loader.FewShotNERDatasetWithRandomSampling(train_fname, None, 1, 1, 1, 1)
+        samples = data_loader.FewShotNERDatasetWithRandomSampling(train_fname, None, 1, 1, 1, 1).samples
         tag_lists = [sample.tags for sample in samples]
 
     s_o, s_i = 0., 0.
