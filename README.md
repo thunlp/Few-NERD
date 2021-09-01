@@ -11,7 +11,7 @@ This is the source code of the ACL-IJCNLP 2021 paper:  [**Few-NERD: A Few-shot N
 
 \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\* **Updates** \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*
 
-- 01/09/2021: We have modified the results of the supervised setting of Few-NERD in arxiv, thanks for the help of PedroMLF[https://github.com/PedroMLF].
+- 01/09/2021: We have modified the results of the supervised setting of Few-NERD in arxiv, thanks for the help of [PedroMLF](https://github.com/PedroMLF).
 
 - 19/08/2021: **Important💥** In accompany with the released episode data, we have updated the training script. Simply add `--use_sampled_data` when running `train_demo.py` to train and test on the released episode data.
 
