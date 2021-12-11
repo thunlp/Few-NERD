@@ -213,7 +213,7 @@ class FewShotNERDatasetWithRandomSampling(data.Dataset):
         return support_set, query_set
     
     def __len__(self):
-        return 1000000000
+        return 100000
 
 class FewShotNERDataset(FewShotNERDatasetWithRandomSampling):
     def __init__(self, filepath, tokenizer, max_length, ignore_label_id=-1):
