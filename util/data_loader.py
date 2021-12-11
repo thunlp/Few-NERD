@@ -104,6 +104,14 @@ class FewShotNERDatasetWithRandomSampling(data.Dataset):
                 classes += sample_classes
                 samplelines = []
                 index += 1
+        if samplelines:
+            sample = Sample(samplelines)
+            samples.append(sample)
+            sample_classes = sample.get_tag_class()
+            self.__insert_sample__(index, sample_classes)
+            classes += sample_classes
+            samplelines = []
+            index += 1
         classes = list(set(classes))
         return samples, classes
 
