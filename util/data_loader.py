@@ -194,8 +194,8 @@ class FewShotNERDatasetWithRandomSampling(data.Dataset):
             tokens, labels = self.__get_token_label_list__(self.samples[idx])
             word, mask, text_mask, label = self.__getraw__(tokens, labels)
             word = torch.tensor(word).long()
-            mask = torch.tensor(mask).long()
-            text_mask = torch.tensor(text_mask).long()
+            mask = torch.tensor(np.array(mask)).long()
+            text_mask = torch.tensor(np.array(text_mask)).long()
             self.__additem__(idx, dataset, word, mask, text_mask, label)
         dataset['sentence_num'] = [len(dataset['word'])]
         if savelabeldic:
