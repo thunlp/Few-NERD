@@ -393,13 +393,12 @@ class FewShotNERFramework:
         it = 0
         while it + 1 < train_iter:
             for _, (support, query) in enumerate(self.train_data_loader):
-                # support, query = next(self.train_data_loader)
+                label = torch.cat(query['label'], 0)
                 if torch.cuda.is_available():
                     for k in support:
                         if k != 'label' and k != 'sentence_num':
                             support[k] = support[k].cuda()
                             query[k] = query[k].cuda()
-                    label = torch.cat(query['label'], 0)
                     label = label.cuda()
 
                 logits, pred = model(support, query)
@@ -527,12 +526,12 @@ class FewShotNERFramework:
             it = 0
             while it + 1 < eval_iter:
                 for _, (support, query) in enumerate(eval_dataset):
+                    label = torch.cat(query['label'], 0)
                     if torch.cuda.is_available():
                         for k in support:
                             if k != 'label' and k != 'sentence_num':
                                 support[k] = support[k].cuda()
                                 query[k] = query[k].cuda()
-                        label = torch.cat(query['label'], 0)
                         label = label.cuda()
                     logits, pred = model(support, query)
                     if self.viterbi:
