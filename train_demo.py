@@ -24,7 +24,7 @@ def set_seed(seed):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', default='inter',
-            help='training mode, must be in [inter, intra, supervised]')
+            help='training mode, must be in [inter, intra]')
     parser.add_argument('--trainN', default=2, type=int,
             help='N in train')
     parser.add_argument('--N', default=2, type=int,
@@ -44,7 +44,7 @@ def main():
     parser.add_argument('--val_step', default=20, type=int,
            help='val after training how many iters')
     parser.add_argument('--model', default='proto',
-            help='model name, must be basic-bert, proto, nnshot, or structshot')
+            help='model name, must be proto, nnshot, or structshot')
     parser.add_argument('--max_length', default=100, type=int,
            help='max length')
     parser.add_argument('--lr', default=1e-4, type=float,
@@ -120,6 +120,9 @@ def main():
         if not (os.path.exists(opt.train) and os.path.exists(opt.dev) and os.path.exists(opt.test)):
             os.system(f'bash data/download.sh episode-data')
             os.system('unzip -d data/ data/episode-data.zip')
+    
+    if opt.mode == "supervised":
+        print("Warning: you are running few-shot learning methods on `supervised` dataset, if it is not expected, please change to `--mode inter` or `--mode intra`.")
 
     train_data_loader = get_loader(opt.train, tokenizer,
             N=trainN, K=K, Q=Q, batch_size=batch_size, max_length=max_length, ignore_index=opt.ignore_index, use_sampled_data=opt.use_sampled_data)
