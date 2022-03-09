@@ -7,12 +7,11 @@ checkpoint/
 apex
 *.slurm
 *deprecated.py
-*.sh
-!download.sh
-data/inter/
-data/intra/
-data/supervised/
+data/*
+!data/labels.txt
 *.zip
+*ignore.py
+output/
 
 
 # Byte-compiled / optimized / DLL files
