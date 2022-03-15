@@ -240,7 +240,7 @@ year={2021}
 
 ## License
 
-Few-NERD dataset is distribued under the CC BY-SA 4.0 license. The code is distribued under the Apache 2.0 license.
+Few-NERD dataset is distributed under the CC BY-SA 4.0 license. The code is distributed under the Apache 2.0 license.
 
 
 ## Connection
