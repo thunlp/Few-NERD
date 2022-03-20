@@ -11,7 +11,6 @@ python3 -u run_supervised.py --data_dir ./data/supervised \
 --per_gpu_train_batch_size 16 \
 --per_gpu_eval_batch_size 16 \
 --save_steps 2000 \
---eval_all_checkpoints \
 --max_steps 20000 \
 --seed 1 \
 --do_predict \

@@ -110,7 +110,8 @@ def train(args, train_dataset, model, tokenizer, labels, pad_token_label_id):
     logger.info("  Total optimization steps = %d", t_total)
 
     global_step = 0
-    tr_loss, logging_loss = 0.0, 0.0
+    tr_loss = 0.0
+    best_metric = 0.0
     model.zero_grad()
     train_iterator = trange(int(args.num_train_epochs), desc="Epoch", disable=args.local_rank not in [-1, 0])
     set_seed(args)  # Added here for reproductibility (even between python 2 and 3)
@@ -155,11 +156,16 @@ def train(args, train_dataset, model, tokenizer, labels, pad_token_label_id):
                     # Log metrics
                     if args.local_rank == -1 and args.evaluate_during_training:  # Only evaluate when single GPU otherwise metrics may not average well
                         results, _ = evaluate(args, model, tokenizer, labels, pad_token_label_id, mode="dev")
-                        # for key, value in results.items():
-                    #         tb_writer.add_scalar("eval_{}".format(key), value, global_step)
-                    # tb_writer.add_scalar("lr", scheduler.get_lr()[0], global_step)
-                    # tb_writer.add_scalar("loss", (tr_loss - logging_loss) / args.logging_steps, global_step)
-                    logging_loss = tr_loss
+                        if results["f1"] > best_metric:
+                            best_metric = results["f1"]
+                            output_dir = os.path.join(args.output_dir, "checkpoint-best")
+                            if not os.path.exists(output_dir):
+                                os.makedirs(output_dir)
+                            model_to_save = model.module if hasattr(model, "module") else model  # Take care of distributed/parallel training
+                            model_to_save.save_pretrained(output_dir)
+                            torch.save(args, os.path.join(output_dir, "training_args.bin"))
+                            tokenizer.save_pretrained(output_dir)
+                            logger.info("Saving model checkpoint to %s", output_dir)
 
                 if args.local_rank in [-1, 0] and args.save_steps > 0 and global_step % args.save_steps == 0:
                     # Save model checkpoint
@@ -211,7 +217,7 @@ def evaluate(args, model, tokenizer, labels, pad_token_label_id, mode, prefix=""
                       # XLM and RoBERTa don"t use segment_ids
                       "labels": batch[3]}
             outputs = model(**inputs)
-            tmp_eval_loss, logits = outputs
+            tmp_eval_loss, logits = outputs[0], outputs[1]
             eval_loss += tmp_eval_loss.item()
         nb_eval_steps += 1
         if preds is None:
@@ -445,26 +451,24 @@ def main():
         logger.info(" global_step = %s, average loss = %s", global_step, tr_loss)
 
     # Saving best-practices: if you use defaults names for the model, you can reload it using from_pretrained()
-    if args.do_train and (args.local_rank == -1 or torch.distributed.get_rank() == 0):
-        # Create output directory if needed
-        if not os.path.exists(args.output_dir) and args.local_rank in [-1, 0]:
-            os.makedirs(args.output_dir)
-
-        logger.info("Saving model checkpoint to %s", args.output_dir)
+    best_checkpoint = os.path.join(args.output_dir, "checkpoint-best")
+    if args.do_train and (args.local_rank == -1 or torch.distributed.get_rank() == 0) and not os.path.exists(best_checkpoint):
+        os.makedirs(best_checkpoint)
+        logger.info("Saving model checkpoint to %s", best_checkpoint)
         # Save a trained model, configuration and tokenizer using `save_pretrained()`.
         # They can then be reloaded using `from_pretrained()`
         model_to_save = model.module if hasattr(model, "module") else model  # Take care of distributed/parallel training
-        model_to_save.save_pretrained(args.output_dir)
-        tokenizer.save_pretrained(args.output_dir)
+        model_to_save.save_pretrained(best_checkpoint)
+        tokenizer.save_pretrained(best_checkpoint)
 
         # Good practice: save your training arguments together with the trained model
-        torch.save(args, os.path.join(args.output_dir, "training_args.bin"))
+        torch.save(args, os.path.join(best_checkpoint, "training_args.bin"))
 
     # Evaluation
     results = {}
     if args.do_eval and args.local_rank in [-1, 0]:
-        tokenizer = tokenizer_class.from_pretrained(args.output_dir, do_lower_case=args.do_lower_case)
-        checkpoints = [args.output_dir]
+        tokenizer = tokenizer_class.from_pretrained(best_checkpoint, do_lower_case=args.do_lower_case)
+        checkpoints = [best_checkpoint]
         if args.eval_all_checkpoints:
             checkpoints = list(os.path.dirname(c) for c in sorted(glob.glob(args.output_dir + "/**/" + WEIGHTS_NAME, recursive=True)))
             logging.getLogger("pytorch_transformers.modeling_utils").setLevel(logging.WARN)  # Reduce logging
@@ -483,17 +487,17 @@ def main():
                 writer.write("{} = {}\n".format(key, str(results[key])))
 
     if args.do_predict and args.local_rank in [-1, 0]:
-        tokenizer = tokenizer_class.from_pretrained(args.output_dir, do_lower_case=args.do_lower_case)
-        model = model_class.from_pretrained(args.output_dir)
+        tokenizer = tokenizer_class.from_pretrained(best_checkpoint, do_lower_case=args.do_lower_case)
+        model = model_class.from_pretrained(best_checkpoint)
         model.to(args.device)
         result, predictions = evaluate(args, model, tokenizer, labels, pad_token_label_id, mode="test")
         # Save results
-        output_test_results_file = os.path.join(args.output_dir, "test_results.txt")
+        output_test_results_file = os.path.join(best_checkpoint, "test_results.txt")
         with open(output_test_results_file, "w") as writer:
             for key in sorted(result.keys()):
                 writer.write("{} = {}\n".format(key, str(result[key])))
         # Save predictions
-        output_test_predictions_file = os.path.join(args.output_dir, "test_predictions.txt")
+        output_test_predictions_file = os.path.join(best_checkpoint, "test_predictions.txt")
         with open(output_test_predictions_file, "w") as writer:
             with open(os.path.join(args.data_dir, "test.txt"), "r") as f:
                 example_id = 0

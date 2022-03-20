@@ -4,3 +4,4 @@ torch==1.7.1
 transformers==4.0.1
 apex==0.9.10dev
 scikit_learn==0.24.1
+seqeval
