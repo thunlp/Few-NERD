@@ -17,7 +17,7 @@ wget -O $data_dir/intra.zip https://cloud.tsinghua.edu.cn/f/a0d3efdebddd4412b07c
 unzip -o -d $data_dir/ $data_dir/intra.zip
 rm -rf $data_dir/intra.zip
 elif [ $1 == 'episode-data' ]; then
-wget -O $data_dir/episode-data.zip https://cloud.tsinghua.edu.cn/f/0e38bd108d7b49808cc4/?dl=1
+wget -O $data_dir/episode-data.zip https://cloud.tsinghua.edu.cn/f/56fb277d3fd2437a8ee3/?dl=1
 unzip -o -d $data_dir/ $data_dir/episode-data.zip
 rm -rf $data_dir/episode-data.zip
 fi
