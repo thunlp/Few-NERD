@@ -230,11 +230,11 @@ python3 train_demo.py  --mode inter \
 If you use Few-NERD in your work, please cite our paper:
 
 ```bibtex
-@inproceedings{ding2021few,
-title={Few-NERD: A Few-Shot Named Entity Recognition Dataset},
-author={Ding, Ning and Xu, Guangwei and Chen, Yulin, and Wang, Xiaobin and Han, Xu and Xie, Pengjun and Zheng, Hai-Tao and Liu, Zhiyuan},
-booktitle={ACL-IJCNLP},
-year={2021}
+@article{ding2021few,
+  title={Few-nerd: A few-shot named entity recognition dataset},
+  author={Ding, Ning and Xu, Guangwei and Chen, Yulin and Wang, Xiaobin and Han, Xu and Xie, Pengjun and Zheng, Hai-Tao and Liu, Zhiyuan},
+  journal={arXiv preprint arXiv:2105.07464},
+  year={2021}
 }
 ```
 
