@@ -554,13 +554,14 @@ class FewShotNERFramework:
                         break
                     it += 1
 
-            precision = correct_cnt / pred_cnt
-            recall = correct_cnt /label_cnt
-            f1 = 2 * precision * recall / (precision + recall)
+            epsilon = 1e-6
+            precision = correct_cnt / (pred_cnt + epsilon)
+            recall = correct_cnt / (label_cnt + epsilon)
+            f1 = 2 * precision * recall / (precision + recall + epsilon)
             fp_error = fp_cnt / total_token_cnt
             fn_error = fn_cnt / total_token_cnt
-            within_error = within_cnt / total_span_cnt
-            outer_error = outer_cnt / total_span_cnt
+            within_error = within_cnt / (total_span_cnt + epsilon)
+            outer_error = outer_cnt / (total_span_cnt + epsilon)
             sys.stdout.write('[EVAL] step: {0:4} | [ENTITY] precision: {1:3.4f}, recall: {2:3.4f}, f1: {3:3.4f}'.format(it + 1, precision, recall, f1) + '\r')
             sys.stdout.flush()
             print("")
