@@ -1,5 +1,5 @@
 nltk>=3.6.4
-numpy==1.21.0
+numpy==1.22.0
 torch==1.7.1
 transformers==4.0.1
 apex==0.9.10dev
