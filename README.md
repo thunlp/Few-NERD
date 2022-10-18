@@ -229,14 +229,25 @@ python3 train_demo.py  --mode inter \
 
 If you use Few-NERD in your work, please cite our paper:
 
-```bibtex
-@article{ding2021prompt,
-  title={Prompt-learning for fine-grained entity typing},
-  author={Ding, Ning and Chen, Yulin and Han, Xu and Xu, Guangwei and Xie, Pengjun and Zheng, Hai-Tao and Liu, Zhiyuan and Li, Juanzi and Kim, Hong-Gee},
-  journal={arXiv preprint arXiv:2108.10604},
-  year={2021}
+@inproceedings{ding-etal-2021-nerd,
+    title = "Few-{NERD}: A Few-shot Named Entity Recognition Dataset",
+    author = "Ding, Ning  and
+      Xu, Guangwei  and
+      Chen, Yulin  and
+      Wang, Xiaobin  and
+      Han, Xu  and
+      Xie, Pengjun  and
+      Zheng, Haitao  and
+      Liu, Zhiyuan",
+    booktitle = "Proceedings of the 59th Annual Meeting of the Association for Computational Linguistics and the 11th International Joint Conference on Natural Language Processing (Volume 1: Long Papers)",
+    month = aug,
+    year = "2021",
+    address = "Online",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/2021.acl-long.248",
+    doi = "10.18653/v1/2021.acl-long.248",
+    pages = "3198--3213",
 }
-
 ```
 
 ## License
