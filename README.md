@@ -229,6 +229,7 @@ python3 train_demo.py  --mode inter \
 
 If you use Few-NERD in your work, please cite our paper:
 
+```bibtex
 @inproceedings{ding-etal-2021-nerd,
     title = "Few-{NERD}: A Few-shot Named Entity Recognition Dataset",
     author = "Ding, Ning  and
